@@ -7,3 +7,5 @@ Introduction to the course – goals, requirements, tools, structure, evaluation
 ## Topic 2 – Hello WebGL
 Creating our first WebGL program. HTML page. Canvas background. WebGL context. Color buffers. Vertex and fragment shaders. Shader's anatomy. Shader compilation and linking. GLSL.
 
+[Example 1](Lectures/WebGL-02%20Hello%20WebGL/Example%201%20-%20Canvas/Example%200201.html)
+
