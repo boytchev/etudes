@@ -1,0 +1,17 @@
+﻿<!DOCTYPE html>
+
+<!-- Име на страницата -->
+<head>
+	<meta charset="utf-8"/>
+	<title>Привет WebGL</title>
+</head>
+
+<body>
+	<!-- Заглавие в текста -->
+	<h2>Привет WebGL</h2>
+
+	<!-- Елемент canvas, в който ще рисуваме с WebGL -->
+	<canvas width="600" height="400" style="border: solid;">
+		Искаме canvas, но няма!
+	</canvas>
+</body>
