@@ -1,0 +1,122 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="three.min.js"></script>
+		<style>
+			h1 {
+				position: fixed;
+				
+				color: black;
+				
+				width: 100%;
+				margin: 0.5em;
+				z-index: 1;
+
+				text-align: center;
+				
+				font-family: Cordana, Calibri, sans-serif;
+				font-size: 2em;
+				font-weight: normal;
+			}
+		</style>
+	</head>
+	
+	<body>
+		<h1>Negative Light</h1>
+		
+		<script>
+
+
+			const N = 15; // number of balls
+			
+
+			// construct and setup the scene
+			
+			var renderer = new THREE.WebGLRenderer( {antialias:true} );
+				renderer.setAnimationLoop( animate );
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+
+			var scene = new THREE.Scene();
+				scene.background = new THREE.Color( 'white' );
+
+			var camera = new THREE.PerspectiveCamera( 60, 1, 1, 1000 );
+				camera.position.set( 0, 0, 100 );
+				camera.lookAt( scene.position );
+			
+			var light = new THREE.PointLight( 'white', 0.5 );
+				light.position.set( 0, 150, 300 );
+				scene.add( light );
+				scene.add( new THREE.AmbientLight( 'orange', 0.5 ) );
+			
+			var clock = new THREE.Clock( true );
+
+
+			// construct a cube with balls and lights in the balls
+			
+			var cube = new THREE.Mesh(
+					new THREE.BoxBufferGeometry( 50, 50, 50 ),
+					new THREE.MeshStandardMaterial( {color: 'wheat', emissive: 'tan', emissiveIntensity: 0.1, metalness: 0} )
+				);
+				scene.add( cube );
+			
+			var geometry = new THREE.IcosahedronGeometry( 2, 2 ),
+				material = new THREE.MeshPhongMaterial( {color: 'black', shininess: 50 } );
+			for (var i=0; i<N; i++)
+			{
+				var ball = new THREE.Mesh( geometry, material );
+					ball.offset = 2*Math.PI*Math.random();
+					ball.add( new THREE.PointLight( 'white', -0.5, 20 ) ); // negative light!!!
+
+				cube.add( ball );
+			}
+			
+			
+			// maintain full screen
+			
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+			
+			function onWindowResize( event )
+			{
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight, true );
+			}			
+
+
+			// animation loop
+			function animate()
+			{
+				var time = clock.getElapsedTime();
+
+				// slow rotation of the cube
+				cube.rotation.set( time/8, time/5, time/7 );
+				
+				// move the balls (and the lights inside them)
+				for (var i=0; i<N; i++)
+				{
+					var ball  = cube.children[i],
+						phi   = - i + time/3 + Math.sin(3*time-i)/2,
+						theta = i*i - time/3 + Math.cos(3*time+i)/3;
+					
+					// set ball position on a sphere of radius 60
+					ball.position.setFromSphericalCoords( 60, phi, theta );
+
+					// collapse the sphere into a cube of size 27
+					var m = 27/Math.max( Math.abs(ball.position.x), Math.abs(ball.position.y), Math.abs(ball.position.z) );
+					ball.position.multiplyScalar( m );
+				}
+				
+				renderer.render( scene, camera );
+			}
+			
+		</script>
+	</body>
+</html>
+
+
