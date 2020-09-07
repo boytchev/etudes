@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+
+<head>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<script src="etudes-webgl.js"></script>	
+	<link rel="stylesheet" href="../etudes.css">
+	
+	<script id="vshader" type="x-shader/x-vertex">
+		attribute vec2 aXY;
+		varying vec2 vXY;
+		
+		void main ()
+		{
+			// just pass down the coordinates
+			gl_Position = vec4(aXY,0,1);
+			vXY = aXY;
+		}
+	</script>
+	
+	<script id="fshader" type="x-shader/x-fragment">
+		precision highp float;
+		
+		varying vec2 vXY;
+		
+		uniform float uSx; // horizontal scale
+		uniform float uSy; // vertical scale
+		uniform float uT;  // time
+
+		const float PI = 3.14159;
+			
+		void main( )
+		{
+			float x = uSx*vXY.x;
+			float y = uSy*vXY.y;
+
+			// pulsating factor
+			float ss = 3.0+1.0*sin(uT+2.0*floor(x/PI)+3.0*floor(y/PI));
+
+			// local coordinates within a box
+			x = ss*(x/PI - floor(x/PI) - 0.5);
+			y = ss*(y/PI - floor(y/PI) - 0.5);
+
+			float k;
+
+			k = pow(x*x+y*y-1.0,3.0)-x*x*y*y*y; // heart curve 1
+			k = pow(abs(k*sin(uT/5.0)),0.5)*cos(uT/3.5);
+			float z1 = 0.5+1.5*k*sin(uSx*vXY.x)*sin(uSy*vXY.y);
+
+			k = pow(x*x+y*y-1.0,3.0)+x*x*y*y*y; // heart curve 2
+			k = pow(abs(k*cos(uT/5.0)),0.25)*sin(uT/2.5);
+			float z2 = 0.5-1.5*k*sin(uSx*vXY.x)*sin(uSy*vXY.y);
+			
+			float z = min(z1,z2);
+
+			// generate crimsonish colour
+			gl_FragColor = vec4(1.0-z*z,-z,0.5-z,1);
+		}
+	</script>
+
+	<script>
+		function start( )
+		{
+			gl = getContext("picasso");
+			glprog = getProgram("vshader","fshader");
+			
+			// geometry that covers the whole screen
+			var data = [1,-1,1,1,-1,-1,-1,1];
+			var buf = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+
+			gl.enableVertexAttribArray(aXY);
+			gl.vertexAttribPointer(aXY,2,gl.FLOAT,false,0,0);
+			
+			startTime = Date.now();
+			
+			window.addEventListener('resize',resize,false);
+			resize();
+			drawFrame();
+		}
+		
+		function resize()
+		{
+			gl.canvas.width = window.innerWidth;
+			gl.canvas.height = window.innerHeight;
+			
+			gl.viewport(0,0,window.innerWidth,window.innerHeight);
+			
+			gl.uniform1f(uSx,window.innerWidth/80);
+			gl.uniform1f(uSy,window.innerHeight/80);
+		}
+		
+		function drawFrame()
+		{
+			requestAnimationFrame(drawFrame);
+
+			gl.uniform1f(uT,(Date.now()-startTime)/200);
+			
+			gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+		}
+	</script>	
+</head>
+
+<body onload="start()">
+	<h1>Hearts <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+	
+	<canvas id="picasso" style="border: none; position:fixed; top:4em; left:0; width:100%; height:calc(100% - 4em);">
+		No canvas
+	</canvas>
+</body>
