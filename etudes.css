@@ -27,3 +27,7 @@ a {
 a:hover {
 	background: CornFlowerBlue;
 }
+
+.white, .white a {
+	color: white;
+}
