@@ -1,6 +1,9 @@
 # Études 3D
 This is a repository for the source code of various 3D programlets.
 
+### Neon tori [WebGL]
+Using shader to generate neonish shiny surface of a torus. Colour stripes are define by the direction of the reflection rays. [Live demo](https://boytchev.github.io/etudes/webgl/neon-tori.html).
+
 ### Snowing [Three.js]
 A simple model of snowing scene. The snowflake's texture is generated programmatically. [Live demo](https://boytchev.github.io/etudes/threejs/snowing.html). 
 

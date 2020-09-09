@@ -1,0 +1,159 @@
+﻿<!DOCTYPE html>
+
+<head>
+	<meta charset="utf-8"/>
+
+	<script src="etudes-webgl.js"></script>	
+	
+	<link rel="stylesheet" href="../etudes.css">
+
+	<script id="vshader" type="x-shader/x-vertex">
+		uniform mat4 uProjectionMatrix;
+		uniform mat4 uViewMatrix;
+		uniform mat4 uModelMatrix;
+		
+		uniform bool uUseAmbient;
+		uniform vec3 uAmbientColor;
+
+		uniform bool uUseDiffuse;
+		uniform vec3 uDiffuseColor;
+
+		uniform vec3 uLightDir;
+		
+		attribute vec3 aXYZ;		// координати на връх
+		attribute vec3 aColor;		// цвят на връх
+		attribute vec3 aNormal;		// нормален вектор на връх
+
+		varying vec3 vNormal;
+		varying vec3 vColor;
+		varying vec3 vPos;
+		
+		void main ()
+		{
+			mat4 mvMatrix = uViewMatrix * uModelMatrix;
+			vec4 pos = mvMatrix * vec4(aXYZ,1);
+			gl_Position = uProjectionMatrix * pos;
+
+			vColor = aColor;
+			if (uUseAmbient)
+				vColor *= uAmbientColor;
+			
+			vec3 normal = vec3(normalize(mvMatrix*vec4(aNormal,0)));
+			vec3 light = normalize(-uLightDir);
+			if (uUseDiffuse)
+				vColor += aColor*uDiffuseColor*max(dot(normal,light),0.0);
+
+			vPos = pos.xyz/pos.w;
+			vNormal = normal;
+		}
+	</script>
+	
+	<script id="fshader" type="x-shader/x-fragment">
+		precision mediump float;
+
+		uniform highp vec3 uLightDir;
+		uniform bool uUseSpecular;
+		uniform vec3 uSpecularColor;
+		uniform float uShininess;
+
+		varying vec3 vNormal;
+		varying vec3 vColor;
+		varying vec3 vPos;
+
+		void main( )
+		{
+			vec3 light = normalize(-uLightDir);
+			
+			vec3 reflectedLight = normalize(reflect(light,normalize(vNormal)));
+
+			vec3 viewDir = normalize(vPos);
+
+			float cosa = max(dot(reflectedLight,viewDir),0.0);
+			vec3 specularColor = vec3(pow(cosa,5.0));
+			
+			specularColor.r = specularColor.r+cos(reflectedLight.x*10.0)/10.0; 
+			specularColor.g = specularColor.g+cos(reflectedLight.y*10.0)/10.0; 
+			specularColor.b = specularColor.b+cos(reflectedLight.z*10.0)/10.0; 
+
+			gl_FragColor = vec4(vColor+specularColor,1);
+		}
+	</script>
+
+
+	<script>
+
+
+		function start( )
+		{
+			var	canvas = document.getElementById("picasso");
+
+			init();
+
+			window.addEventListener('resize',resize,false);
+			resize();
+
+			drawFrame();
+		}
+		
+		function init()
+		{
+			gl = getContext("picasso");
+			glprog = getProgram("vshader","fshader");
+
+			gl.enable(gl.DEPTH_TEST);
+			gl.clearColor(0,0,0.3,1);
+
+			identity();
+			perspective(30,gl.canvas.width/gl.canvas.height,1,40000);
+
+			gl.uniform3f(uAmbientColor,0.1,0,0.3);
+			gl.uniform1i(uUseAmbient,true);
+
+			gl.uniform3f(uDiffuseColor,1,1,0.9);
+			gl.uniform1i(uUseDiffuse,true);
+			
+			gl.uniform3f(uLightDir,0,0,-1);
+
+			tor1 = new Torus ([0,3,0],1,6,2.5);
+			tor2 = new Torus ([0,-3,0],1,6,2.5);
+		}
+		
+		var frame = 0;
+	
+		function drawFrame()
+		{
+			frame++;
+			gl.clear(gl.COLOR_BUFFER_BIT+gl.DEPTH_BUFFER_BIT);
+			lookAt([45*Math.cos(frame/100),45*Math.sin(frame/100),10*Math.sin(frame/180)], [0,0,0], [0,0,1]);
+			yRotate(0.5);
+
+			pushMatrix();
+
+				tor1.draw();
+			
+				yRotate(90);
+				tor2.draw();
+				
+			popMatrix();
+			
+			requestAnimationFrame(drawFrame);
+		}
+		
+		function resize()
+		{
+			gl.canvas.width = window.innerWidth;
+			gl.canvas.height = window.innerHeight;
+			
+			gl.viewport(0,0,window.innerWidth,window.innerHeight);
+		}
+
+	</script>	
+</head>
+
+<body onload="start()">
+	<h1 class="white">Neon tori <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+	
+	<canvas id="picasso" style="border: none; position:fixed; top:0; left:0; width:100%; height:100%;">
+		No canvas
+	</canvas>
+</body>
