@@ -1,5 +1,8 @@
 This is a repository for the source code of various 3D programlets.
 
+### Crystal planet [Three.js]
+A planet is created as a level-5 icosahedron with a randomized geometry &ndash; actually, only the distance to the center is randomized. [Live demo](threejs/crystal-planet.html). 
+
 ### Neon tori [WebGL]
 Using shader to generate neonish shiny surface of a torus. Colour stripes are defined by the direction of the reflection rays. [Live demo](https://boytchev.github.io/etudes/webgl/neon-tori.html).
 
