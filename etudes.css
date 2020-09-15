@@ -1,13 +1,15 @@
 ﻿
-h1 {
+h1, h3 {
 	position: fixed;
 	
 	color: black;
 	
-	width: 100%;
-	margin: 0.5em;
+	width: calc(100% - 1.5em);
+	left: 0;
+	margin: 0;
+	margin-right: 1em;
+	
 	z-index: 1;
-
 	text-align: center;
 	
 	font-family: Cordana, Calibri, sans-serif;
@@ -15,11 +17,19 @@ h1 {
 	font-weight: normal;
 }
 
+h3 {
+	width: 100%;
+	top: 2.5em;
+	font-size: 1.25em;
+	opacity: 0.75;
+}
+
 
 a {
 	float: left;
+	
 	font-size: 80%;
-	padding: 0.2em;
+	padding: 0.2em 0.5em;
 	text-decoration: none;
 	color: black;
 }
@@ -30,4 +40,9 @@ a:hover {
 
 .white, .white a {
 	color: white;
+}
+
+sup {
+	padding-left: 0.1em;
+	font-size: 65%;
 }

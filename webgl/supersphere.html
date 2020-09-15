@@ -1,0 +1,270 @@
+﻿<!DOCTYPE html>
+
+<head>
+	<meta charset="utf-8"/>
+
+	<script src="etudes-webgl.js"></script>	
+	
+	<link rel="stylesheet" href="../etudes.css">
+	
+	<script id="vshader" type="x-shader/x-vertex">
+		uniform mat4 uProjectionMatrix;
+		uniform mat4 uViewMatrix;
+		uniform mat4 uModelMatrix;
+		uniform mat4 uNormalMatrix;
+		uniform bool uUseNormalMatrix;
+		
+		uniform bool uUseAmbient;
+		uniform vec3 uAmbientColor;
+
+		uniform bool uUseDiffuse;
+		uniform vec3 uDiffuseColor;
+
+		uniform vec3 uLightDir;
+		
+		attribute vec3 aXYZ;
+		attribute vec3 aColor;
+		attribute vec3 aNormal;
+
+		varying vec3 vColor;
+		
+		void main ()
+		{
+			mat4 mvMatrix = uViewMatrix * uModelMatrix;
+			gl_Position = uProjectionMatrix * mvMatrix * vec4(aXYZ,1);
+			mat4 nMatrix = uUseNormalMatrix?uNormalMatrix:mvMatrix;
+			
+			if (uUseAmbient)
+				vColor = uAmbientColor*aColor*aXYZ;
+			else
+				vColor = aColor;
+
+			if (uUseDiffuse)
+			{
+				vec3 light = normalize(-uLightDir);
+				vec3 normal = vec3(normalize(nMatrix*vec4(aNormal,0)));
+				vColor += aColor*uDiffuseColor*max(dot(normal,light),0.0);
+			}
+		}
+	</script>
+	
+	<script id="fshader" type="x-shader/x-fragment">
+		precision mediump float;
+		varying vec3 vColor;
+		void main( )
+		{
+			gl_FragColor = vec4(vColor,1);
+		}
+	</script>
+
+	<script>
+		var superSpheres = [],
+			powers = [2, 100, 10, 1, 1.2, 0.7, 0.25],
+			sizes  = [0.75, 0.5, 0.55, 0.9, 0.75, 0.9, 4];
+		
+		
+		// position a point on a supersphere
+		function newLength( v )
+		{
+			function pow( x )
+			{
+				return Math.pow( Math.abs(x), POWER );
+			}
+			
+			var d = Math.pow( pow(v[0]) + pow(v[1]) + pow(v[2]), 1/POWER );
+			
+			return [ v[0]/d, v[1]/d, v[2]/d ];
+		}
+		
+		
+		function start( )
+		{
+			formula = document.getElementById('formula');
+		
+			init();
+			
+			window.addEventListener('resize',resize,false);
+			resize();
+			
+			drawFrame();
+		}
+		
+
+		function init()
+		{
+			gl = getContext("picasso");
+			glprog = getProgram("vshader","fshader");
+	
+			gl.enable(gl.DEPTH_TEST);
+			gl.clearColor(0.95,0.95,0.95,1);
+
+			identity();
+			perspective(20,gl.canvas.width/gl.canvas.height,1,40000);
+			
+			gl.uniform1i(uUseNormalMatrix,false);
+
+			gl.uniform3f(uAmbientColor,0.8,0.4,0.4);
+			gl.uniform1i(uUseAmbient,true);
+
+			gl.uniform3f(uDiffuseColor,0.85,0.85,0.85);
+			gl.uniform1i(uUseDiffuse,true);
+			
+			gl.uniform3f(uLightDir,0,0,-1);
+
+			gl.vertexAttrib3fv(aColor,[1,1,1]);
+
+			// create the superspheres
+			for( var i=0; i<7; i++ )
+			{
+				POWER = powers[i];
+				superSpheres[i] = new CanonicalGeodesicSphere(6);
+			}
+		}
+
+
+		CanonicalGeodesicSphere = function(level)
+		{	
+			var data = [];
+			var n = 0;
+			
+			function mid(p,q)
+			{
+				return [(p[0]+q[0])/2,(p[1]+q[1])/2,(p[2]+q[2])/2];
+			}
+			
+			function triangle(p1,p2,p3,level)
+			{
+				if (level)
+				{	
+					var m12 = mid(p1,p2);
+					var m23 = mid(p2,p3);
+					var m31 = mid(p3,p1);
+					level--;
+					triangle(p1,m12,m31,level);
+					triangle(m12,p2,m23,level);
+					triangle(m31,m23,p3,level);
+					triangle(m12,m23,m31,level);
+				}
+				else
+				{	
+					p1 = newLength(p1);
+					p2 = newLength(p2);
+					p3 = newLength(p3);
+					var u = vectorPoints(p2,p1);
+					var v = vectorPoints(p3,p1);
+					var norm = unitVector(vectorProduct(u,v));
+					data.push( p1[0], p1[1], p1[2], norm[0], norm[1], norm[2] );
+					data.push( p2[0], p2[1], p2[2], norm[0], norm[1], norm[2] );
+					data.push( p3[0], p3[1], p3[2], norm[0], norm[1], norm[2] );
+					n++;
+				}
+			}
+			
+			var f = (1+Math.sqrt(5))/2;
+
+			triangle([ 0, 1, f], [ 1, f, 0], [-1, f, 0], level);
+			triangle([ 0, 1,-f], [-1, f, 0], [ 1, f, 0], level);
+			triangle([ 0,-1, f], [-1,-f, 0], [ 1,-f, 0], level);
+			triangle([ 0,-1,-f], [ 1,-f, 0], [-1,-f, 0], level);
+
+			triangle([ 1, f, 0], [ f, 0, 1], [ f, 0,-1], level);
+			triangle([ 1,-f, 0], [ f, 0,-1], [ f, 0, 1], level);
+			triangle([-1, f, 0], [-f, 0,-1], [-f, 0, 1], level);
+			triangle([-1,-f, 0], [-f, 0, 1], [-f, 0,-1], level);
+
+			triangle([ f, 0, 1], [ 0, 1, f], [ 0,-1, f], level);
+			triangle([-f, 0, 1], [ 0,-1, f], [ 0, 1, f], level);
+			triangle([ f, 0,-1], [ 0,-1,-f], [ 0, 1,-f], level);
+			triangle([-f, 0,-1], [ 0, 1,-f], [ 0,-1,-f], level);
+
+			triangle([ 0, 1, f], [ f, 0, 1], [ 1, f, 0], level);
+			triangle([ 0, 1, f], [-1, f, 0], [-f, 0, 1], level);
+			triangle([ 0,-1, f], [ 1,-f, 0], [ f, 0, 1], level); 
+			triangle([ 0,-1, f], [-f, 0, 1], [-1,-f, 0], level);
+			
+			triangle([ 0, 1,-f], [ 1, f, 0], [ f, 0,-1], level);
+			triangle([ 0, 1,-f], [-f, 0,-1], [-1, f, 0], level);
+			triangle([ 0,-1,-f], [ f, 0,-1], [ 1,-f, 0], level); 
+			triangle([ 0,-1,-f], [-1,-f, 0], [-f, 0,-1], level);
+			
+			var buf = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+			
+			this.n = n;
+			this.buf = buf;
+		}
+
+
+		CanonicalGeodesicSphere.prototype.draw = function()
+		{	
+			gl.bindBuffer(gl.ARRAY_BUFFER,this.buf);
+
+			gl.enableVertexAttribArray(aXYZ);
+			gl.vertexAttribPointer(aXYZ,3,gl.FLOAT,false,6*FLOATS,0*FLOATS);
+
+			gl.enableVertexAttribArray(aNormal);
+			gl.vertexAttribPointer(aNormal,3,gl.FLOAT,false,6*FLOATS,3*FLOATS);
+
+			gl.vertexAttrib3fv(aColor,[0.8,0.9,1]);
+			gl.drawArrays(gl.TRIANGLES,0,3*this.n);
+		}
+
+
+
+		var startTime = Date.now(),
+			oldIndex = -1;
+			
+			
+		function drawFrame()
+		{
+			requestAnimationFrame(drawFrame);
+			
+			time = (Date.now()-startTime)/500;
+			
+			gl.clear(gl.COLOR_BUFFER_BIT+gl.DEPTH_BUFFER_BIT);
+			
+			lookAt([5*Math.cos(time),5*Math.sin(time),5], [0,0,0], [0,0,1]);
+			yRotate(0.5);
+			
+			var index = Math.floor(time/10)%7;
+			if( superSpheres[index] )
+			{			
+				pushMatrix();
+				scale([sizes[index],sizes[index],sizes[index]]);
+				useMatrix();
+				superSpheres[index].draw();
+				popMatrix();
+				
+				if( index!=oldIndex )
+				{
+					oldIndex = index;
+					formula.innerHTML = 'X<sup>'+powers[index]+'</sup> + Y<sup>'+powers[index]+'</sup> + Z<sup>'+powers[index]+'</sup> = 1';
+				}
+			}
+		}
+		
+		
+		function resize()
+		{
+			gl.canvas.width = window.innerWidth;
+			gl.canvas.height = window.innerHeight;
+			
+			gl.viewport(0,0,window.innerWidth,window.innerHeight);
+
+			perspective(20,gl.canvas.width/gl.canvas.height,1,40000);
+		}
+		
+		
+	</script>	
+</head>
+
+
+<body onload="start()">
+	<h1>Supersphere<a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+	<h3 id="formula"></h3>
+	
+	<canvas id="picasso" style="border: none; position:fixed; top:0; left:0; width:100%; height:100%;">
+		No canvas
+	</canvas>
+</body>

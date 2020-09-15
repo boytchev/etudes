@@ -1,5 +1,8 @@
 This is a repository for the source code of various 3D programlets.
 
+### Supersphere [WebGL]
+Spheres, cubes, octahedrons ... are all instances of the supesphere X<sup><small>n</small></sup> + Y<sup><small>n</small></sup> + Z<sup><small>n</small></sup> = 1. [Live demo](https://boytchev.github.io/etudes/webgl/supersphere.html).
+
 ### Crystal planet [Three.js]
 A planet is created as a level-5 icosahedron with a randomized geometry &ndash; actually, only the distance to the center is randomized. [Live demo](threejs/crystal-planet.html). 
 
