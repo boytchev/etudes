@@ -1,5 +1,8 @@
 This is a repository for the source code of various 3D programlets.
 
+### Bingo balls [Three.js]
+Not all textures need to be loaded from files. These bingo balls get their textures drawn at startup via [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API). [Live demo](threejs/bingo-balls.html). 
+
 ### Supersphere [WebGL]
 Spheres, cubes, octahedrons ... are all instances of the supesphere X<sup><small>n</small></sup> + Y<sup><small>n</small></sup> + Z<sup><small>n</small></sup> = 1. [Live demo](https://boytchev.github.io/etudes/webgl/supersphere.html).
 
