@@ -1,7 +1,7 @@
 This is a repository for the source code of various 3D programlets.
 
 ### Graphical integration [WebGL]
-Every curved or bending surface could be represented by a set of small flat plates. This is the computer graphics analog to mathematical integration. [Live demo](https://boytchev.github.io/etudes/webgl/graphical-integration.html/)
+Every curved or bending surface could be represented by a set of small flat plates. This is the computer graphics analog to mathematical integration. [Live demo](https://boytchev.github.io/etudes/webgl/graphical-integration.html/).
 
 ### Bingo balls [Three.js]
 Not all textures need to be loaded from files. These bingo balls get their textures drawn at startup via [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API). [Live demo](threejs/bingo-balls.html). 
