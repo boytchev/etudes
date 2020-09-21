@@ -1,0 +1,229 @@
+﻿<!DOCTYPE html>
+
+<head>
+	<meta charset="utf-8"/>
+
+	<script src="etudes-webgl.js"></script>	
+	
+	<link rel="stylesheet" href="../etudes.css">
+	
+	<script id="vshader" type="x-shader/x-vertex">
+		uniform mat4 uProjectionMatrix;
+		uniform mat4 uViewMatrix;
+		uniform mat4 uModelMatrix;
+		uniform mat4 uNormalMatrix;
+		uniform bool uUseNormalMatrix;
+		
+		uniform vec3 uAmbientColor;
+
+		uniform vec3 uDiffuseColor;
+
+		uniform vec3 uLightDir;
+		
+		attribute vec3 aXYZ;
+		attribute vec3 aColor;
+		attribute vec3 aNormal;
+
+		varying vec3 vColor;
+		
+		void main ()
+		{
+			mat4 mvMatrix = uViewMatrix * uModelMatrix;
+			gl_Position = uProjectionMatrix * mvMatrix * vec4(aXYZ,1);
+			mat4 nMatrix = uUseNormalMatrix?uNormalMatrix:mvMatrix;
+			
+			vColor = uAmbientColor*aColor;
+
+			vec3 light = normalize(-uLightDir);
+			vec3 normal = vec3(normalize(nMatrix*vec4(aNormal,0)));
+			vColor += aColor*uDiffuseColor*max(dot(normal,light),0.0);
+		}
+	</script>
+
+	
+	<script id="fshader" type="x-shader/x-fragment">
+		precision mediump float;
+		varying vec3 vColor;
+		void main( )
+		{
+			gl_FragColor = vec4(vColor,1);
+		}
+	</script>
+
+	<script>
+
+		Bone = function(size)
+		{	
+			this.bone = new Cuboid([0,0,0],size);
+			this.bone.color = [0.5,0.8,0.5];
+			this.bone.offset = [0,0,0.5];
+			this.rot = [0,0,0,0];
+		}
+
+		Bone.prototype.draw = function()
+		{	
+			if (this.rot)
+			{
+				if (this.rot[0]) zRotate(this.rot[0]);	// horizontal angle
+				if (this.rot[1]) yRotate(this.rot[1]);	// vertical angle
+				if (this.rot[2]) xRotate(this.rot[2]);	// vertical angle
+				if (this.rot[3]) zRotate(this.rot[3]);	// axial angle
+			}
+			if (this.offset) translate(this.offset); 
+			this.bone.draw();
+			translate([0,0,this.bone.size[2]]); // shift to the end of the bone
+		}
+
+
+		Bird = function()
+		{	
+			// body
+			this.tor = new Bone([2,1,1]);
+			this.tor.bone.color = [0.5,0.5,0.5];
+			
+			this.head = new Bone([0.75,0.5,1]);
+			this.head.offset = [-1.5,0,-1];
+			this.head.bone.color = [0.5,0.5,0.5];
+			
+			this.beak = new Bone([0.65,0.1,0.65]);
+			this.beak.rot = [0,45,0,0];
+			this.beak.offset = [0.1,0,-0.9];
+			this.beak.bone.color = [1,0,0];
+			
+			this.eyes = new Bone([0.3,0.51,0.3]);
+			this.eyes.rot = [0,45,0,0];
+			this.eyes.bone.color = [1,1,1];
+			this.iris = new Bone([0.15,0.52,0.15]);
+			this.iris.rot = [0,0,0,0];
+			this.iris.bone.color = [0.4,0.4,1];
+			this.iris.offset = [0,0,-0.225];
+			
+			// wings
+			this.wingLeft = [];
+			this.wingRight = [];
+			for (var i=0; i<10; i++)
+			{
+				var cos = Math.cos(i/2.5-1);
+				this.wingLeft[i] = new Bone([1+cos,0.1,0.3]);
+				this.wingLeft[i].offset = [0.5,0,0];
+				this.wingLeft[i].bone.color = [0.5+0.5*Math.sin(i/2),0.5+0.5*Math.cos(i/3),0.5-0.5*Math.sin(i/4)];
+				this.wingRight[i] = new Bone([1+cos,0.1,0.3]);
+				this.wingRight[i].offset = [0.5,0,0];
+				this.wingRight[i].bone.color = this.wingLeft[i].bone.color;
+			}
+		}
+		
+		Bird.prototype.draw = function()
+		{
+			for (var i=0; i<10; i++)
+			{
+				if (i==0)
+				{
+					this.wingLeft[i].rot = [-40*Math.sin(4*time-i/3-2),0,55*Math.sin(4*time-i/3),0];
+					this.wingRight[i].rot = [+40*Math.sin(4*time-i/3-2),0,-55*Math.sin(4*time-i/3),0];
+				}
+				else
+				{
+					this.wingLeft[i].rot = [-10*Math.sin(4*time-i/3),0,15*Math.sin(4*time-i/3),0];
+					this.wingRight[i].rot = [10*Math.sin(4*time-i/3),0,-15*Math.sin(4*time-i/3),0];
+				}
+			}
+			
+			pushMatrix();
+				translate([Math.cos(4*time)/2,0,-1*Math.cos(4*time)/2]);
+				xRotate(-45*Math.cos(time));
+				yRotate(-5*Math.cos(4*time));
+				this.tor.draw();
+				var mat0 = cloneMatrix(glmat);
+				xRotate(35*Math.sin(time));
+				zRotate(15*Math.sin(time));
+				this.head.draw();
+				this.beak.draw();
+				this.eyes.draw();
+				this.iris.draw();
+
+				glmat = cloneMatrix(mat0);
+				xRotate(90);
+				translate([-0.5,0.5,0.5]);
+				for (var i=0; i<10; i++)
+				{
+					this.wingLeft[i].draw();
+					translate([-0.3-0.15*Math.sin(i/3),0,0]);
+				}
+				
+				glmat = mat0;
+				xRotate(-90);
+				translate([-0.5,-0.5,0.5]);
+				for (var i=0; i<10; i++)
+				{
+					this.wingRight[i].draw();
+					translate([-0.3-0.15*Math.sin(i/3),0,0]);
+				}
+			popMatrix();
+		}
+
+		function start( )
+		{
+			init();
+			
+			window.addEventListener('resize',resize,false);
+			resize();
+			
+			drawFrame();
+		}
+		
+		function init()
+		{
+			gl = getContext("picasso");
+			glprog = getProgram("vshader","fshader");
+	
+			gl.enable(gl.DEPTH_TEST);
+			gl.clearColor(0.95,0.95,0.95,1);
+
+			identity();
+			perspective(20,gl.canvas.width/gl.canvas.height,1,40000);
+			
+			gl.uniform1i(uUseNormalMatrix,false);
+
+			gl.uniform3f(uAmbientColor,0.3,0.3,0.3);
+			gl.uniform3f(uDiffuseColor,1,1,1);
+			gl.uniform3f(uLightDir,0,0,-1);
+
+			bird = new Bird();
+		}
+
+
+		var startTime = Date.now();
+		
+		function drawFrame()
+		{
+			requestAnimationFrame(drawFrame);
+
+			time = (Date.now()-startTime)/1000;
+
+			gl.clear(gl.COLOR_BUFFER_BIT+gl.DEPTH_BUFFER_BIT);
+			
+			lookAt([15*Math.cos(time/3),15*Math.sin(time/3),3],[0,0,0.5],[0,0,1]);
+
+			bird.draw();
+		}
+
+		function resize()
+		{
+			gl.canvas.width = window.innerWidth;
+			gl.canvas.height = window.innerHeight;
+			
+			gl.viewport(0,0,window.innerWidth,window.innerHeight);
+
+			perspective(20,gl.canvas.width/gl.canvas.height,1,40000);
+		}
+	</script>	
+</head>
+
+<body onload="start()">
+	<h1>Graphical integration <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+	
+	<canvas id="picasso" style="border: none; position:fixed; top:0; left:0; width:100%; height:100%;">
+		No canvas
+	</canvas>
+</body>

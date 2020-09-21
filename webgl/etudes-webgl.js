@@ -582,3 +582,76 @@ Torus.prototype.draw = function()
 
 	popMatrix();
 }
+
+
+CanonicalCube = function()
+{	
+	var v = [ [+0.5,-0.5,-0.5], [+0.5,+0.5,-0.5],
+			  [-0.5,+0.5,-0.5], [-0.5,-0.5,-0.5],
+			  [+0.5,-0.5,+0.5], [+0.5,+0.5,+0.5],
+			  [-0.5,+0.5,+0.5], [-0.5,-0.5,+0.5] ];
+	var n = [ [1,0,0], [-1,0,0],
+			  [0,1,0], [0,-1,0],
+			  [0,0,1], [0,0,-1] ];
+	var data = [].concat(
+			  v[0],n[0],v[1],n[0],v[4],n[0],
+			  v[4],n[0],v[1],n[0],v[5],n[0],
+			  v[6],n[1],v[2],n[1],v[7],n[1],
+			  v[7],n[1],v[2],n[1],v[3],n[1],
+			  v[5],n[2],v[1],n[2],v[6],n[2],
+			  v[6],n[2],v[1],n[2],v[2],n[2],
+			  v[4],n[3],v[7],n[3],v[0],n[3],
+			  v[0],n[3],v[7],n[3],v[3],n[3],
+			  v[4],n[4],v[5],n[4],v[7],n[4],
+			  v[7],n[4],v[5],n[4],v[6],n[4],
+			  v[0],n[5],v[3],n[5],v[1],n[5],
+			  v[1],n[5],v[3],n[5],v[2],n[5] );
+
+	var buf = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+
+	this.buf = buf;
+}
+
+CanonicalCube.prototype.draw = function()
+{	
+	gl.bindBuffer(gl.ARRAY_BUFFER,this.buf);
+	gl.enableVertexAttribArray(aXYZ);
+	gl.vertexAttribPointer(aXYZ,3,gl.FLOAT,false,6*FLOATS,0*FLOATS);
+	gl.enableVertexAttribArray(aNormal);
+	gl.vertexAttribPointer(aNormal,3,gl.FLOAT,false,6*FLOATS,3*FLOATS);
+	gl.drawArrays(gl.TRIANGLES,0,36);
+}
+
+var canonicalCube;
+
+
+Cuboid = function(center,size)
+{
+	this.center = center;
+	this.size = size;
+	this.color = [1,0.75,0];
+	this.offset = undefined;
+	this.rot = undefined;
+	if (!canonicalCube)
+		canonicalCube = new CanonicalCube();
+}
+
+Cuboid.prototype.draw = function()
+{
+	pushMatrix();
+	gl.vertexAttrib3fv(aColor,this.color);
+	translate(this.center);
+	if (this.rot)
+	{
+		if (this.rot[0]) zRotate(this.rot[0]);
+		if (this.rot[1]) xRotate(this.rot[1]);
+		if (this.rot[2]) zRotate(this.rot[2]);
+	}
+	scale(this.size);
+	if (this.offset) translate(this.offset);
+	useMatrix();
+	canonicalCube.draw();
+	popMatrix();
+}
