@@ -1,5 +1,8 @@
 This is a repository for the source code of various 3D programlets.
 
+### Lantern [Three.js]
+Constructive Solid Geometry ([CSG](https://en.wikipedia.org/wiki/Constructive_solid_geometry)) is a technique to build models by combining, subtracting or intersecting shapes. CSG also provides algebraic notation of models' construction. [Live demo](threejs/lantern.html). 
+
 ### Graphical integration [WebGL]
 Every curved or bending surface could be represented by a set of small flat plates. This is the computer graphics analog to mathematical integration. [Live demo](https://boytchev.github.io/etudes/webgl/graphical-integration.html).
 

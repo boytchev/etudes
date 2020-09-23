@@ -1,0 +1,167 @@
+﻿<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="three.min.js"></script>
+		<script src="ThreeCSG.js"></script>
+		<link rel="stylesheet" href="../etudes.css">
+	</head>
+	
+	<body>
+		<h1 class="white">Lantern <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		<script>
+
+			// create the scene
+			var renderer = new THREE.WebGLRenderer();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.setAnimationLoop( animate );
+				renderer.shadowMap.enabled = true;
+				renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+				renderer.shadowMap.mapSize = new THREE.Vector2( 128, 128 );
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+				
+			var scene = new THREE.Scene();
+			
+			var camera = new THREE.PerspectiveCamera( 30, window.innerWidth/window.innerHeight, 0.1, 1000 );
+				camera.position.set( 0, 20, 30 );
+				camera.lookAt( new THREE.Vector3( 0, -2, 0 ) );
+
+
+			// constructing the die
+			var body = new THREE.BoxGeometry( 4, 4, 4 ),
+				bsp = new ThreeBSP(body);
+				bsp = bsp.subtract(new ThreeBSP(new THREE.BoxGeometry( 3.7, 3.7, 3.7 )));
+
+			var d = 0.9; // gaps
+			
+			// straight cuts
+			var hole = new THREE.Mesh( new THREE.BoxGeometry(0.15, 10, 10) );
+				//hole.position.set( -d, 0, 0 ); bsp = bsp.subtract(new ThreeBSP(hole));
+				hole.position.set( 0, 0, 0 ); bsp = bsp.subtract(new ThreeBSP(hole));
+				//hole.position.set( d, 0, 0 ); bsp = bsp.subtract(new ThreeBSP(hole));
+			var hole = new THREE.Mesh( new THREE.BoxGeometry(10, 0.15, 10) );
+				//hole.position.set( 0, -d, 0 ); bsp = bsp.subtract(new ThreeBSP(hole));
+				hole.position.set( 0, 0, 0 ); bsp = bsp.subtract(new ThreeBSP(hole));
+				//hole.position.set( 0, d, 0 ); bsp = bsp.subtract(new ThreeBSP(hole));
+			var hole = new THREE.Mesh( new THREE.BoxGeometry(10, 10, 0.15) );
+				//hole.position.set( 0, 0, -d ); bsp = bsp.subtract(new ThreeBSP(hole));
+				hole.position.set( 0, 0, 0 ); bsp = bsp.subtract(new ThreeBSP(hole));
+				//hole.position.set( 0, 0, d ); bsp = bsp.subtract(new ThreeBSP(hole));
+			
+			// circular cuts
+			
+			var hole = new THREE.Mesh( new THREE.CylinderGeometry(0.4,0.4,1,24) );
+				hole.geometry.openEnded = true;
+			
+			// 2
+			hole.position.set( -d,2,-d ); bsp = bsp.subtract(new ThreeBSP(hole));
+			hole.position.set( d,2,d ); bsp = bsp.subtract(new ThreeBSP(hole));
+			// 5
+			hole.position.set( -d,-2,-d ); bsp = bsp.subtract(new ThreeBSP(hole));
+			hole.position.set( -d,-2,d ); bsp = bsp.subtract(new ThreeBSP(hole));
+			hole.position.set( d,-2,d ); bsp = bsp.subtract(new ThreeBSP(hole));
+			hole.position.set( d,-2,-d ); bsp = bsp.subtract(new ThreeBSP(hole));
+			hole.position.set( 0,-2,0 ); bsp = bsp.subtract(new ThreeBSP(hole));
+			// 1
+			hole.rotation.z = Math.PI/2;
+			hole.position.set( 2,0,0 ); bsp = bsp.subtract(new ThreeBSP(hole));
+			// 6
+			hole.position.set( -2,-d,-d ); bsp = bsp.subtract(new ThreeBSP(hole));
+			hole.position.set( -2,-d,0 ); bsp = bsp.subtract(new ThreeBSP(hole));
+			hole.position.set( -2,-d,d ); bsp = bsp.subtract(new ThreeBSP(hole));
+			hole.position.set( -2,d,-d ); bsp = bsp.subtract(new ThreeBSP(hole));
+			hole.position.set( -2,d,0 ); bsp = bsp.subtract(new ThreeBSP(hole));
+			hole.position.set( -2,d,d ); bsp = bsp.subtract(new ThreeBSP(hole));
+			// 3
+			hole.rotation.y = Math.PI/2;
+			hole.position.set( -d,-d,2 ); bsp = bsp.subtract(new ThreeBSP(hole));
+			hole.position.set( 0,0,2 ); bsp = bsp.subtract(new ThreeBSP(hole));
+			hole.position.set( d,d,2 ); bsp = bsp.subtract(new ThreeBSP(hole));
+			// 4
+			hole.position.set( -d,-d,-2 ); bsp = bsp.subtract(new ThreeBSP(hole));
+			hole.position.set( -d,d,-2 ); bsp = bsp.subtract(new ThreeBSP(hole));
+			hole.position.set( d,-d,-2 ); bsp = bsp.subtract(new ThreeBSP(hole));
+			hole.position.set( d,d,-2 ); bsp = bsp.subtract(new ThreeBSP(hole));
+
+			var lantern = bsp.toMesh(new THREE.MeshPhongMaterial({
+				emissive: 'navy',
+				shininess: 100,
+				emissiveIntensity: 0.3,
+				polygonOffset: true,
+				polygonOffsetFactor:1 }));
+			lantern.castShadow = true;
+			scene.add( lantern );
+			
+			var edges = new THREE.EdgesGeometry( body ),
+				wireframe = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( {
+						color: 'cornflowerblue',
+						transparent:true,
+						opacity:0.5 } ) );
+				lantern.add( wireframe );
+
+
+			// platform around the lantern
+			var geometry = new THREE.BoxGeometry( 100, 1, 100),
+				material = new THREE.MeshPhongMaterial( {color:'cornflowerblue'} );
+				platform = new THREE.Mesh( geometry, material );
+				platform.position.set( 0,-5,0 );
+				platform.receiveShadow = true;
+				scene.add( platform );
+
+			// light inside the lantern
+			var lanternLight = new THREE.SpotLight( 'lightyellow', 2 );
+				lanternLight.position.set( 0, 1, 0 );
+				lanternLight.target = scene;
+				lanternLight.angle = 1;
+				lanternLight.penumbra = 0.5;
+				lanternLight.castShadow = true;
+				lanternLight.shadow.mapSize.width = 1024;
+				lanternLight.shadow.mapSize.height = 1024;
+				scene.add( lanternLight );
+
+			// light on top of the lantern
+			var lanternTopLight = new THREE.SpotLight( 'crimson', 1/3 );
+				lanternTopLight.position.set( 0, 10, 0 );
+				lanternTopLight.target = scene;
+				lanternTopLight.angle = 0.6;
+				lanternTopLight.penumbra = 1;
+				scene.add( lanternTopLight );
+				
+			// light from above
+			var topLight = new THREE.SpotLight( 'white', 1/3 );
+				topLight.position.set( 0, 5, 5 );
+				topLight.angle = 2;
+				topLight.penumbra = 1;
+				scene.add( topLight );
+
+
+
+			var clock = new THREE.Clock( true );
+
+
+
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+			
+			function onWindowResize( event )
+			{
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight, true );
+			}			
+			
+			
+			function animate()
+			{
+				var time = clock.getElapsedTime();
+				
+				lantern.rotation.set( time/2, 2*time, time );
+				
+				renderer.render( scene, camera );
+			}
+
+		</script>
+	</body>
+</html>
