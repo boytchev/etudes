@@ -1,0 +1,130 @@
+﻿<!DOCTYPE html>
+
+<head>
+	<meta charset="utf-8"/>
+
+	<script src="etudes-webgl.js"></script>	
+	
+	<link rel="stylesheet" href="../etudes.css">
+	
+	<script id="vshader" type="x-shader/x-vertex">
+		uniform mat4 uProjectionMatrix;
+		uniform mat4 uViewMatrix;
+		uniform mat4 uModelMatrix;
+		uniform mat4 uNormalMatrix; 
+		uniform bool uUseNormalMatrix; 
+		
+		uniform bool uUseAmbient;
+		uniform vec3 uAmbientColor;
+
+		uniform bool uUseDiffuse;
+		uniform vec3 uDiffuseColor;
+
+		uniform vec3 uLightDir;
+		
+		attribute vec3 aXYZ;
+		attribute vec3 aColor;
+		attribute vec3 aNormal;
+
+		varying vec3 vColor;
+		
+		void main ()
+		{
+			mat4 mvMatrix = uViewMatrix * uModelMatrix;
+			gl_Position = uProjectionMatrix * mvMatrix * vec4(aXYZ,1);
+			mat4 nMatrix = uUseNormalMatrix?uNormalMatrix:mvMatrix;
+			
+			if (uUseAmbient)
+				vColor = uAmbientColor*aColor;
+			else
+				vColor = aColor;
+
+			if (uUseDiffuse)
+			{
+				vec3 light = normalize(-uLightDir);
+				vec3 normal = vec3(normalize(nMatrix*vec4(aNormal,0)));
+				vColor += aColor*uDiffuseColor*max(dot(normal,light),0.0);
+			}
+		}
+	</script>
+	
+	<script id="fshader" type="x-shader/x-fragment">
+		precision mediump float;
+		varying vec3 vColor;
+		void main( )
+		{
+			gl_FragColor = vec4(vColor,1);
+		}
+	</script>
+
+	<script>
+		function start( )
+		{
+			init();
+			
+			window.addEventListener('resize',resize,false);
+			resize();
+			
+			drawFrame();
+		}
+		
+		function init()
+		{
+			gl = getContext("picasso");
+			glprog = getProgram("vshader","fshader");
+
+			gl.enable(gl.DEPTH_TEST);
+			gl.clearColor(1,1,0.8,1);
+
+			identity();
+			perspective(30,gl.canvas.width/gl.canvas.height,1,40000);
+			gl.uniform1i(uUseNormalMatrix,false);
+
+			gl.uniform3f(uAmbientColor,0.4,0.4,0.4);
+			gl.uniform1i(uUseAmbient,true);
+
+			gl.uniform3f(uDiffuseColor,0.75,1,0.75);
+			gl.uniform1i(uUseDiffuse,true);
+			
+			gl.uniform3f(uLightDir,0,0,-1);
+
+			wine_jug = new RotationalSolid ([ 0, 5,-5],[1,1,10],function(z){return Math.sin(6*z)+2;});
+			
+			wine_glass = new RotationalSolid ([ 0,-5,-5],[0.6,0.6,7],function(z){return (Math.sin(6*z+3.1))/(z+0.15)+2.8;});
+		}
+		
+		var startTime = Date.now();
+	
+		function drawFrame()
+		{
+			requestAnimationFrame(drawFrame);
+
+			time = (Date.now()-startTime)/1000;
+
+			gl.clear(gl.COLOR_BUFFER_BIT+gl.DEPTH_BUFFER_BIT);
+			
+			lookAt([40*Math.cos(time),40*Math.sin(time),5+2*Math.sin(time)], [0,0,0], [0,0,1]);
+
+			wine_jug.draw();
+			wine_glass.draw();
+		}
+
+		function resize()
+		{
+			gl.canvas.width = window.innerWidth;
+			gl.canvas.height = window.innerHeight;
+			
+			gl.viewport(0,0,window.innerWidth,window.innerHeight);
+
+			perspective(20,gl.canvas.width/gl.canvas.height,1,40000);
+		}
+	</script>	
+</head>
+
+<body onload="start()">
+	<h1>Sine cheers <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+	
+	<canvas id="picasso" style="border: none; position:fixed; top:0; left:0; width:100%; height:100%;">
+		No canvas
+	</canvas>
+</body>

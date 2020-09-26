@@ -655,3 +655,91 @@ Cuboid.prototype.draw = function()
 	canonicalCube.draw();
 	popMatrix();
 }
+
+
+
+var ROTATIONAL_SIDES = 32;
+var ROTATIONAL_LEVELS = 40;
+
+RotationalSolid = function(center,size,f)
+{	
+	function vertex(a,z)
+	{
+		var r = f(z);
+		return [r*Math.cos(a),r*Math.sin(a),z];
+	}
+
+	function normal(a,z)
+	{
+		var p = vertex(a,z);
+		var u = vectorPoints(vertex(a+0.0001,z),p);
+		var v = vectorPoints(vertex(a+0.0001,z+0.0001),p);
+		return unitVector(vectorProduct(u,v));
+	}
+		
+	function dataPush(a,z)
+	{	
+		var p = vertex(a,z);
+		var n = normal(a,z);
+		data.push(p[0],p[1],p[2],n[0],n[1],n[2]);
+	}
+	
+	var data = [];
+	
+	var dZ = 1/ROTATIONAL_LEVELS;
+	for (var zi=0; zi<ROTATIONAL_LEVELS; zi++)
+	{
+		var a = 0, dA = 2*Math.PI/ROTATIONAL_SIDES;
+
+		var z1 = zi*dZ;
+		var z2 = (zi+1)*dZ;
+		
+		for (var ai=0; ai<=ROTATIONAL_SIDES; ai++)
+		{
+			dataPush(a,z1);
+			dataPush(a,z2);
+			a += dA;
+		}
+	}
+
+	var buf = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+	
+	this.l = ROTATIONAL_LEVELS;
+	this.n = ROTATIONAL_SIDES*2+2;
+	this.buf = buf;
+	this.center = center;
+	this.size = size;
+	this.color = [[1,0.5,1],[0.9,0.4,0.8]];
+}
+
+RotationalSolid.prototype.draw = function()
+{	
+	pushMatrix();
+	translate(this.center);
+	scale(this.size);
+	useMatrix();
+
+	gl.uniform1i(uUseNormalMatrix,true);
+	var nmat = calculateNormalMatrix(multiplyMatrix(glvmat,glmat));
+	gl.uniformMatrix4fv(uNormalMatrix,false,nmat);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER,this.buf);
+
+		gl.enableVertexAttribArray(aXYZ);
+		gl.vertexAttribPointer(aXYZ,3,gl.FLOAT,false,6*FLOATS,0*FLOATS);
+
+		gl.enableVertexAttribArray(aNormal);
+		gl.vertexAttribPointer(aNormal,3,gl.FLOAT,false,6*FLOATS,3*FLOATS);
+
+		for (var i=0; i<this.l; i++)
+		{
+			gl.vertexAttrib3fv(aColor,this.color[i%2]);
+			gl.drawArrays(gl.TRIANGLE_STRIP,this.n*i,this.n);
+		}
+		
+	gl.uniform1i(uUseNormalMatrix,false);
+
+	popMatrix();
+}
