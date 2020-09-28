@@ -1,7 +1,7 @@
 This is a repository for the source code of various 3D programlets.
 
 ### Minimalistic village [Three.js]
-Sometimes simple minimalistic solutions provide enough complexity. A 2D up-vote arrow shape could be extruded into a house. And then, multiple houses could be arranged in a small village. [Live demo](threejs/minimalistic-village.html). 
+Sometimes simple minimalistic solutions provide enough complexity. A 2D upvote arrow shape could be extruded into a house. And then, multiple houses could be arranged in a small village. [Live demo](threejs/minimalistic-village.html). 
 
 ### Sine cheers [WebGL]
 The sine curve can be used to define hundreds of rotational shapes. Do you know that the wine jug and the wine glass are among those shapes? See [here](webgl/sine-cheers-graph.jpg). Cheers! [Live demo](webgl/sine-cheers.html).
