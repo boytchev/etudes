@@ -1,7 +1,7 @@
 This is a repository for the source code of various 3D programlets.
 
 ### Look Ma, no quaternions [Three.js]
-For free-walking on a sphere you can use pure Three.js vector arithmetics. No need to fight with quaternions, matrices, Euler angles and gimbal locks. Slide the mouse or your finger to see it in this [Live demo](threejs/look-ma-no-quaternions.html). 
+For free-walking on a sphere you can use pure Three.js vector arithmetic. No need to fight with quaternions, matrices, Euler angles and gimbal locks. Slide the mouse or your finger to see it in this [Live demo](threejs/look-ma-no-quaternions.html). 
 
 ### Minimalistic village [Three.js]
 Sometimes simple minimalistic solutions provide enough complexity. A 2D upvote arrow shape could be extruded into a house. And then, multiple houses could be arranged in a small village. [Live demo](threejs/minimalistic-village.html). 
