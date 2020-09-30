@@ -1,0 +1,175 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="three.min.js"></script>
+		<link rel="stylesheet" href="../etudes.css">
+	</head>
+	
+	<body>
+		<h1>Look Ma, no quaternions <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		
+		<script>
+			
+			R = 25; // planet radius
+
+		
+			const WALK_SPEED = 10;
+			const TURN_SPEED = 5;
+			
+			// generate texture
+			// creating 2D image
+			var cnv = document.createElement('canvas');
+				cnv.width = 32;
+				cnv.height = 1024;
+			var ctx = cnv.getContext('2d');
+			
+			// background
+			ctx.fillStyle = 'black';
+			ctx.fillRect(0, 0, 32, 1024);
+		
+			// paint letters
+			ctx.fillStyle = 'white';
+			ctx.font = '5em Arial Black';
+			ctx.textAlign="center";
+			for( var y=-20; y<1024+20; y+= THREE.Math.randInt(10,20) )
+				ctx.fillText( THREE.Math.randInt(0,9),THREE.Math.randInt(0,32),y); 
+
+			// texture generation
+			var texture = new THREE.CanvasTexture( cnv );
+				texture.repeat.set( 1/2, 10 );
+				texture.wrapS = THREE.RepeatWrapping;
+				texture.wrapT = THREE.RepeatWrapping;
+				texture.anosotropy = 8;
+
+			
+			// construct and setup the scene
+			
+			var renderer = new THREE.WebGLRenderer( {antialias:true} );
+				renderer.setAnimationLoop( animate );
+				renderer.shadowMap.enabled = true;
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+
+			var scene = new THREE.Scene();
+				scene.background = new THREE.Color( 'deepskyblue' );
+				scene.fog = new THREE.Fog( 'deepskyblue', R/3, 2*R );
+
+			var dir = new THREE.Vector3( ),
+				side = new THREE.Vector3( ),
+				target = new THREE.Vector3( 1, R, 0 ),
+				camera = new THREE.PerspectiveCamera( 40, 1, 0.1, 2*R );
+				camera.position.set( 0, R, 0 );
+			
+			var light = new THREE.PointLight( 'white', 0.5 );
+				light.position.set( 0, 150, 300 );
+				light.castShadow = true;
+				scene.add( light );
+			
+			var light = new THREE.PointLight( 'orange', 1 );
+				light.position.set( 0, -150, -300 );
+				light.castShadow = true;
+				scene.add( light );
+			
+			var clock = new THREE.Clock( true );
+
+
+			// construct the planet
+			
+			var planet = new THREE.Mesh(
+					new THREE.IcosahedronBufferGeometry( R, 6 ),
+					new THREE.MeshPhongMaterial( {color: 'wheat', bumpMap: texture, bumpScale: 0.01, shininess: 50} )
+				);
+				planet.receiveShadow = true;
+				scene.add( planet );
+
+			var geom = new THREE.BoxBufferGeometry( 1, 4*R, 1 );
+			var matr = new THREE.MeshPhongMaterial( {color: 'tomato', shininess: 100, map: texture } );
+			for( var i=0; i<100; i++)
+			{
+				var pillar = new THREE.Mesh( geom, matr );
+				pillar.receiveShadow = true;
+				pillar.rotation.set( Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI );
+				scene.add( pillar );
+			}
+
+
+			// moths
+			
+			var moths = [],
+				mothGeometry = new THREE.IcosahedronBufferGeometry( 1.6*R, 1 ),
+				mothMaterial = new THREE.PointsMaterial( {color: 'black', size: 0.5 } );
+			for( var i=0; i<5; i++ )
+				moths.push( new THREE.Points( mothGeometry, mothMaterial ) );
+			scene.add( ...moths );
+				
+			
+			// maintain full screen
+			
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+			
+			function onWindowResize( event )
+			{
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight, true );
+			}			
+
+
+
+			// capture the mouse or finger position
+			
+			window.addEventListener( 'mousemove', onMove );
+			window.addEventListener( 'touchmove', onMove );
+			
+			
+			// process mouse control
+			var cos = 1,
+				sin = 0,
+				dTime = 0;
+			function onMove( event )
+			{
+				var x = event.clientX || ((event.touches&&event.touches.length)?event.touches[0].clientX:window.innerWidth/2),
+					angle = TURN_SPEED * (window.innerWidth/2 - x) * dTime / 1200;
+				
+				cos = Math.cos( angle );
+				sin = Math.sin( angle );
+			}
+			
+			
+			// animation loop
+			function animate()
+			{
+				dTime = clock.getDelta();
+
+				// move the camera forward
+				camera.position.addScaledVector( dir, WALK_SPEED*dTime );
+
+				// change walking direction
+				dir.subVectors( target, camera.position ).normalize();
+				side.crossVectors( camera.position, dir ).normalize();
+				dir.multiplyScalar( cos ).addScaledVector( side, sin ).normalize();
+				
+				// set the camera direction
+				target.addVectors( camera.position, dir ).setLength( R+1 );
+				camera.lookAt( target );
+				
+				// set the up direction
+				camera.up.copy( camera.position );
+				
+				// move the moth
+				for( var i=0; i<5; i++ )
+					moths[i].rotation.set( i+clock.elapsedTime/2, i-clock.elapsedTime/2, i );
+					
+				renderer.render( scene, camera );
+			}
+			
+		</script>
+	</body>
+</html>
+
+
