@@ -1,7 +1,7 @@
 This is a repository for the source code of various 3D programlets.
 
 ### Jelly balls [Three.js]
-A low-cost approximation of bouncing jelly balls uses the observation that a vertically compressed ball tries to expand horizontally. [Live demo](threejs/jelly-balls.html). 
+A low-cost approximation of bouncing jelly balls uses the observation that a vertically compressed ball should expand horizontally. [Live demo](threejs/jelly-balls.html). 
 
 ### Look Ma, no quaternions [Three.js]
 For free-walking on a sphere you can use pure Three.js vector arithmetic. No need to fight with quaternions, matrices, Euler angles and gimbal locks. Slide the mouse or your finger to see it in this [Live demo](threejs/look-ma-no-quaternions.html). 
