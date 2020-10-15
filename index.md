@@ -1,5 +1,8 @@
 This is a repository for the source code of various 3D programlets.
 
+### Negative spave [Three.js]
+Negative space is when the shape of an object is defined by the solid space around it. The object per se does not exist. This model of a negative space kanji is actually a homework assignment for my students. It is given 9 hours after they met Three.js and JavaScript for the first time. [Live demo](threejs/negative-space.html). 
+
 ### Matrix chaplet [WebGL]
 Object data may not contain vertex coordinates at all. The data buffer of this étude contains the numbers 0 to 59 that define a circle, which is transformed by matrices into a chaplet. [Live demo](webgl/matrix-chaplet.html). 
 
