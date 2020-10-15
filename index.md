@@ -1,5 +1,8 @@
 This is a repository for the source code of various 3D programlets.
 
+### Matrix chaplet [WebGL]
+Object data may not contain vertex coordinates at all. The data buffer of this étude contains the numbers 0 to 59 that define a circle, which is transformed by matrices into a chaplet. [Live demo](webgl/matrix-chaplet.html). 
+
 ### Jelly balls [Three.js]
 A low-cost approximation of bouncing jelly balls uses the observation that a vertically compressed ball should expand horizontally. [Live demo](threejs/jelly-balls.html). 
 

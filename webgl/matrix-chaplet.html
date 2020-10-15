@@ -1,0 +1,123 @@
+﻿<!DOCTYPE html>
+
+<head>
+	<meta charset="utf-8"/>
+
+	<script src="etudes-webgl.js"></script>	
+	
+	<link rel="stylesheet" href="../etudes.css">
+	
+	<script id="vshader" type="x-shader/x-vertex">
+		uniform mat4 uProjectionMatrix;
+		uniform mat4 uViewMatrix;
+		uniform mat4 uModelMatrix;
+		
+		attribute float aIndex;
+		
+		void main ()
+		{
+			float angle = radians( 6.0*aIndex );
+			gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4( cos(angle), 0, sin(angle), 1 );
+		}
+	</script>
+	
+	<script id="fshader" type="x-shader/x-fragment">
+		precision mediump float;
+		
+		uniform vec3 uColor;
+		
+		void main( )
+		{
+			gl_FragColor = vec4( uColor, 1 );
+		}
+	</script>
+	
+	<script>
+		function start( )
+		{
+			init( );
+			
+			window.addEventListener( 'resize', resize, false );
+			resize( );
+			
+			drawFrame( );
+		}
+			
+			
+			
+		function init( )
+		{
+			gl = getContext( "picasso" );
+			glprog = getProgram( "vshader", "fshader" );
+			
+			gl.clearColor( 1, 1, 1, 1 );
+
+			perspective( 30, gl.canvas.width/gl.canvas.height, 1, 1000 );
+			lookAt( [30,0,3], [0,0,-2], [0,0,1] );
+
+			var data = new Float32Array( 60 );
+			for( var i=0; i<60; i++ ) data[i] = i;
+
+			var buf = gl.createBuffer( );
+			gl.bindBuffer( gl.ARRAY_BUFFER, buf );
+			gl.bufferData( gl.ARRAY_BUFFER, data, gl.STATIC_DRAW );
+
+			gl.enableVertexAttribArray( aIndex );
+			gl.vertexAttribPointer( aIndex, 1, gl.FLOAT, false, 0, 0 );
+
+			gl.uniform3f( uColor, 1/4, 0, 3/4 );
+		}
+		
+		
+		var startTime = Date.now( );
+		
+		
+		function drawFrame( )
+		{
+			requestAnimationFrame( drawFrame );
+
+			time = (Date.now()-startTime) / 1000;
+
+			gl.clear( gl.COLOR_BUFFER_BIT );
+			
+
+			identity( );
+			
+			var n = 200; // circles
+			var k = 11;  // bubbles
+			
+			for (var i=0; i<n; i++)
+			{
+				var s = 1 + 0.8*Math.sin( radians(360/n*k*i) );
+				
+				identity( );
+				zRotate( i*360/n + 10*time + 3*Math.sin(4*time+2*Math.PI*i/n) );	
+				translate( [10,0,0] );
+				scale( [s,1,s] );
+				useMatrix( );
+				
+				gl.drawArrays( gl.LINE_LOOP, 0, 60 );
+			}
+
+		}
+		
+		
+		function resize( )
+		{
+			gl.canvas.width = window.innerWidth;
+			gl.canvas.height = window.innerHeight;
+			
+			gl.viewport( 0, 0, window.innerWidth, window.innerHeight );
+
+			perspective( 30, gl.canvas.width/gl.canvas.height, 1, 1000);
+		}
+	</script>	
+</head>
+
+<body onload="start()">
+	<h1>Matrix chaplet <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+	
+	<canvas id="picasso" style="border: none; position:fixed; top:0; left:0; width:100%; height:100%;">
+		No canvas
+	</canvas>
+</body>
