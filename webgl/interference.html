@@ -1,0 +1,145 @@
+﻿<!DOCTYPE html>
+
+<head>
+	<meta charset="utf-8"/>
+
+	<script src="etudes-webgl.js"></script>	
+	
+	<link rel="stylesheet" href="../etudes.css">
+	
+	<script id="vshader" type="x-shader/x-vertex">
+		uniform float uAspect;
+		attribute vec2 aXY;
+		varying vec2 vXY;
+		void main ()
+		{
+			gl_Position = vec4(uAspect*aXY.x,aXY.y,0,1);
+			vXY = aXY;
+		}
+	</script>
+	
+	<script id="fshader" type="x-shader/x-fragment">
+		precision mediump float;
+
+		#define MAXN 10
+		uniform vec2 uCenter[MAXN];
+
+		uniform int uN;
+		
+		uniform float uScaleLen;
+		uniform float uScaleAmp;
+		
+		varying vec2 vXY;
+		
+		void main( )
+		{
+			float z1 = 0.0;
+			float z2 = 0.0;
+			
+			for (int i=0; i<MAXN; i++)
+			{
+				if (i>=uN) break;
+				z1 += 0.5+0.5*sin(uScaleLen*distance(vXY,uCenter[i]));
+				z2 += 0.5+0.5*cos(uScaleLen*distance(vXY,uCenter[i]));
+			}
+			
+			z1 = mod(uScaleAmp*(z1),2.0);
+			z1 = 1.0-abs(1.0-z1);
+			
+			z2 = mod(uScaleAmp*(z2),2.0);
+			z2 = 1.0-abs(1.0-z2);
+			
+			gl_FragColor = vec4(z1/2.0+z2/2.0,z1,5.0*z1,1);
+		}
+	</script>
+
+	<script>
+		var n = 0,
+			r = 1,
+			cent = [],
+			oldTime = newTime = Date.now();
+		
+		function start( )
+		{
+			gl = getContext("picasso");
+			glprog = getProgram("vshader","fshader");
+
+
+			gl.uniform1f(uAspect,1/(window.innerWidth/window.innerHeight));
+			
+			var data = [3,-1,3,1,-3,-1,-3,1];
+			var buf = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+			
+			gl.enableVertexAttribArray(aXY);
+			gl.vertexAttribPointer(aXY,2,gl.FLOAT,false,0,0);
+
+			window.addEventListener( 'resize', resize, false );
+			
+			resize();
+			randomize();
+			drawFrame();
+			setInterval( randomize, 1000 );
+		}
+		
+		
+		function resize( )
+		{
+			gl.canvas.width = window.innerWidth;
+			gl.canvas.height = window.innerHeight;
+			
+			gl.viewport( 0, 0, window.innerWidth, window.innerHeight );
+
+			gl.uniform1f(uAspect,1/(window.innerWidth/window.innerHeight));
+		}
+		
+
+		function randomize()
+		{
+			n = Math.round(random(3,10));
+			gl.uniform1i(uN,n);
+			
+			var a = 0;
+			for(var i=0; i<n; i++)
+			{
+				a +=2*Math.PI/n;
+				cent[2*i] = Math.cos(a);
+				cent[2*i+1] = Math.sin(a);
+			}
+			gl.uniform2fv(uCenter,cent);
+			gl.uniform1f(uScaleLen,random(2,10));
+			gl.uniform1f(uScaleAmp,random(1,5));
+
+			
+			r = 1;
+		}
+		
+		function drawFrame()
+		{
+			requestAnimationFrame(drawFrame);
+
+			oldTime = newTime;
+			newTime = Date.now();
+			
+			var r = 1 - (newTime-oldTime)/15000;
+			for(var i=0; i<n; i++)
+			{
+				cent[2*i] *= r;
+				cent[2*i+1] *= r;
+			}
+			gl.uniform2fv(uCenter,cent);
+			
+			gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+		}
+
+	</script>	
+</head>
+
+<body onload="start()">
+	<h1>Interference <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+	
+	<canvas id="picasso" style="border: none; position:fixed; top:4em; left:0; width:100%; height:calc(100% - 4em);">
+		No canvas
+	</canvas>
+</body>

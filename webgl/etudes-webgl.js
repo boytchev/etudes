@@ -85,14 +85,24 @@ function getVariables( glprog )
     for (var i = 0; i < gl.getProgramParameter(glprog, gl.ACTIVE_UNIFORMS); i++)
 	{
         var name = gl.getActiveUniform( glprog, i ).name;
+		name = name.replace('[0]','')
+		console.log(name);
         window[name] = gl.getUniformLocation( glprog, name );
     }
 
     for (var i = 0; i < gl.getProgramParameter(glprog, gl.ACTIVE_ATTRIBUTES); i++)
 	{
         var name = gl.getActiveAttrib( glprog, i ).name;
+		name = name.replace('[0]','')
         window[name] = gl.getAttribLocation( glprog, name );
     }
+}
+
+
+
+function random(a,b)
+{
+	return a+(b-a)*Math.random();
 }
 
 
