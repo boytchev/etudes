@@ -1,0 +1,359 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		
+		<script src="three.min.js"></script>
+		<script src="NURBSUtils.js"></script>
+		<script src="NURBSSurface.js"></script>
+		<script src="Bezier3D.js"></script>
+		
+		<link rel="stylesheet" href="../etudes.css">
+		
+		<style>
+			#button {
+				display: block;
+				position: absolute;
+				width: 10em;
+				margin: 20% calc( 50% - 5em);
+				background: cornflowerblue;
+				font-size: 2em;
+				color: white;
+				border-radius: 0.25em;
+				cursor: pointer;
+				padding: 0.25em 0;
+			}
+			#button:hover {
+				color: black;
+				background: white;
+			}
+		</style>
+	</head>
+
+	<body>
+	
+		<button id="button" onclick="startWalking()" style="">Start</button>
+		
+		<h1 class="white">Happy New Year <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		
+		<!--
+			Music by NoiseCollector, December 23rd, 2008, CC BY 3.0
+			https://freesound.org/people/NoiseCollector/sounds/65282/
+		-->
+		<audio id="audio" preload>
+			<source src="happy-new-year/65282__noisecollector__jinglebellslong.ogg" type="audio/ogg">
+			<source src="happy-new-year/65282__noisecollector__jinglebellslong.mp3" type="audio/mpeg">
+		</audio>
+
+		<script>
+		
+		
+			// construct and setup the scene
+
+			var renderer = new THREE.WebGLRenderer( {antialias:true} );
+				renderer.setAnimationLoop( animate );
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+
+			var scene = new THREE.Scene();
+				scene.background = new THREE.Color( 'black' );
+
+			var camera = new THREE.PerspectiveCamera( 60, 1, 1, 10000 );
+				camera.position.set( 0, 30, 100 );
+				camera.lookAt( new THREE.Vector3(0, 20, 0) );
+			
+			var light = new THREE.PointLight( 'dodgerblue', 1/2 );
+				light.position.set( 90, 50, 50 );
+				scene.add( light );
+				
+			var light = new THREE.PointLight( 'pink', 1/2 );
+				light.position.set( -90, 50, 100 );
+				scene.add( light );
+
+			var light = new THREE.PointLight( 'white', 1/2 );
+				light.position.set( 0, 30, 100 );
+				scene.add( light );
+
+			var ground = new THREE.Mesh(
+					new THREE.PlaneGeometry( 23000, 23000 ),
+					new THREE.MeshPhongMaterial( {color:'white'} )
+				);
+				ground.position.y = 0.3;
+				ground.rotation.set( -Math.PI/2, 0, 0 );
+				scene.add( ground );
+
+			var clock = new THREE.Clock( true );
+
+
+			// generate snoflakes (texture and the snowflakes themselves)
+			
+			const N = 2000; // number of snowflakes
+
+			// generate snowflake texture
+			
+			var canvas = document.createElement('canvas');
+				canvas.width = 32;
+				canvas.height = 32;
+				
+			var context = canvas.getContext('2d');
+
+			var gradient = context.createRadialGradient( 15, 15, 2, 15, 15, 15 );
+				gradient.addColorStop( 0, 'white' );
+				gradient.addColorStop( 1, 'rgba(255,255,255,0)' );
+
+				context.fillStyle = gradient;
+				context.fillRect(0, 0, 32, 32 );
+
+			var snowflakes = new THREE.Geometry();
+			for (var i=0; i<N; i++) 
+				snowflakes.vertices.push( new THREE.Vector3( 0, -100, 0 ) );
+						
+			var material = new THREE.PointsMaterial( {
+				color: 'white',
+				size: 3,
+				map: new THREE.CanvasTexture( canvas ),
+				transparent: true,
+				opacity: 0.5,
+				depthWrite: false,
+				depthTest: false
+			});
+			
+			var snow = new THREE.Points( snowflakes, material );
+				scene.add( snow );
+				
+			var snowReflection = snow.clone();
+				snowReflection.material = snow.material.clone();
+				snowReflection.material.opacity = 0.05;
+				snowReflection.scale.y *= -1;
+				scene.add( snowReflection );
+
+
+			// generate walking Three.js logo
+			
+			var walkingLogoMaterial = new THREE.MeshPhongMaterial({
+					color: 'lavender',
+					alphaMap: new THREE.TextureLoader().load( "happy-new-year/threejs-logo.jpg" ),
+					depthTest: false,
+					depthWrite: false,
+					transparent: true,
+					shininess: 100 }),
+				walkingLogo = new Bezier3D(3,walkingLogoMaterial,16);
+				walkingLogo.scale.set( 30, 30, 30 );
+				
+			var walkingLogoReflection = walkingLogo.clone();
+				walkingLogoReflection.material = walkingLogo.material.clone();
+				walkingLogoReflection.material.color.setRGB( 1, 1, 1);
+				walkingLogoReflection.material.opacity = 0.05;
+				walkingLogoReflection.scale.y *= -1;
+
+			// direct access to the logo's control points
+			
+			var p = walkingLogo.controlPoints();
+			
+			for( i=0; i<3; i++ )
+			for( j=0; j<3; j++ )
+			{
+				p[i][j].x = i-1;
+				p[i][j].y = j;
+				p[i][j].z = 0;
+			
+				p[i][j].time = 17+Math.random();
+				p[i][j].k = 1;
+			}
+			
+			p[0][0].time = 15;
+			
+			walkingLogo.recalculate();
+
+			// additional properties of the logo legs
+				
+			var zLeft = -400,	// z of left leg
+				zRight = -400;	// z of right leg
+			
+			var lightLeft = new THREE.PointLight( 'white', 1.5 ),
+				lightRight = new THREE.PointLight( 'white', 1.5 );
+				scene.add( lightLeft, lightRight );
+			
+
+			// toys
+
+			var toyTexture = new THREE.TextureLoader().load( "happy-new-year/threejs-logo-small.jpg" ),
+				toyGeometry = new THREE.PlaneBufferGeometry( 1/4, 1/4 );
+				toyGeometry.translate(0,-0.1,0);
+			
+			var toys = [],
+				toysReflection = [];
+				
+			for( var j=0; j<4; j++)
+			for( var i=0; i<=j; i++ )
+			{
+				// original toy
+				var toy = new THREE.Mesh(
+					toyGeometry,
+					new THREE.MeshBasicMaterial({
+						alphaMap: toyTexture,
+						color: new THREE.Color().setHSL( toys.length*0.533, 1, 0.5 ),
+						depthTest: false,
+						depthWrite: false,
+						transparent: true })
+					);
+				toy.v = 0.85 - 0.21*j;
+				toy.u = 0.5 - 0.12*j + i*0.24;
+				toys.push( toy );
+				
+				// reflected toy
+				toy = toy.clone();
+				toy.v = 0.85 - 0.21*j;
+				toy.u = 0.5 - 0.12*j + i*0.24;
+				toy.material = toy.material.clone();
+				toy.material.opacity = 0.1;
+				toysReflection.push( toy );
+			}
+			
+			walkingLogo.add( ...toys, ...toysReflection );
+			
+			
+			// animation controls
+			var k = 1,	// smooth factor for walking
+				k2 = 1,	// smooth factor for rotation
+				c = Math.cos(-44*Math.PI/180),	// used for logo rotation
+				s = Math.sin(-44*Math.PI/180),	// used for logo rotation
+				walkingStartTime = 0;
+			
+			
+			// maintain full screen
+			
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+
+			
+			function onWindowResize( event )
+			{
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight, true );
+			}			
+
+
+			function startWalking()
+			{
+				document.getElementById('audio').play();
+				document.getElementById('button').style.display = 'none';
+				scene.add( walkingLogo, walkingLogoReflection );
+				walkingStartTime = clock.getElapsedTime();
+			}
+
+
+			function animate()
+			{
+				var dTime = clock.getDelta(),
+					time = clock.getElapsedTime();
+
+
+				// move snowflakes
+				for( var i=0; i<N; i++ )
+				{
+					// move down a snowflake
+					var v = snowflakes.vertices[i];
+					v.x += 0.1 * Math.sin( i/30  + time/40 );
+					v.y -= 0.1 * Math.cos( i/150 + time/70 ) + 0.2;
+					v.z += 0.1 * Math.cos( i/50  + time/20 );
+
+					// recycle after it falls under the ground
+					if( v.y < 0 )
+						v.set( THREE.Math.randFloat( -200, 200 ),
+							   THREE.Math.randFloat( 0, 200 ),
+							   THREE.Math.randFloat( -200, 100 )
+							  );
+				}
+				snowflakes.verticesNeedUpdate = true
+
+
+				// there is a walking logo
+				if( walkingStartTime )
+				{
+					var speed = 3.3,
+						t = speed*(time-walkingStartTime);
+				
+					if( t > 15*speed ) k = k*(1-dTime/2); // gradually slow down walking
+
+					var step = 100;
+
+					zLeft += k*step*dTime*Math.max( 0, Math.sin(t+Math.PI/2) );
+					zRight += k*step*dTime*Math.max( 0, Math.sin(t-Math.PI/2) );
+				
+					var z = Math.min( zLeft, zRight );
+
+					if( z>0 )
+					{
+						zLeft -= z;
+						zRight -= z;
+						z = 0;
+					}
+					
+					walkingLogo.position.z = z;
+					walkingLogoReflection.position.z = z;
+
+					// adjust logo control points
+					p[0][0].z = (zLeft-z)/30;
+					p[0][0].y = Math.max( 0, k*0.3*Math.sin(t+Math.PI/2) );
+					
+					p[2][0].z = (zRight-z)/30;
+					p[2][0].y = Math.max( 0, k*0.3*Math.sin(t-Math.PI/2) );
+
+					p[1][2].x = k*Math.sin(t+Math.PI/2);
+					p[0][0].x = k*Math.sin(t-1/2)/2-1;
+					p[2][0].x = k*Math.sin(t-1/2)/2+1;
+					
+					p[1][0].y = k*0.4+k*0.2*Math.sin( 2*t+0.5 );
+
+					// rotate logo control points
+					for( i=0; i<3; i++ )
+					for( j=0; j<3; j++ )
+					{
+						if( t>speed*(17+i/3+j/3) )
+						{
+							p[i][j].k *= 1-2*dTime;
+							p[i][j].x = p[i][j].x*p[i][j].k + (1-p[i][j].k)*(i*c+j*s)*(1+0.3*p[i][j].k*Math.sin(3*t));
+							p[i][j].y = p[i][j].y*p[i][j].k + (1-p[i][j].k)*(j*c-i*s)*(1+0.2*p[i][j].k*Math.cos(2*t));
+						}
+					}
+			
+					walkingLogo.recalculate();
+
+				
+					// shake toys
+					for( var toy of toys )
+					{
+						toy.position.copy( walkingLogo.surface.getPoint(toy.u,toy.v) );
+						toy.rotation.z = k*Math.sin(2*t+toy.u+3*toy.v)/2;
+					}
+					
+					for( var toy of toysReflection )
+					{
+						toy.position.copy( walkingLogo.surface.getPoint(toy.u,toy.v) );
+						toy.position.y *= -1;
+						toy.rotation.z = Math.PI - k*Math.sin(2*t+toy.u+3*toy.v)/2;
+					}
+				
+				
+					// lights where logo feet touch the ground
+					lightLeft.position.set(30*p[0][0].x,30*p[0][0].y+1,zLeft);
+					lightRight.position.set(30*p[2][0].x,30*p[2][0].y+1,zRight);
+					
+					lightLeft.intensity = 1-p[0][0].y*0.8;
+					lightRight.intensity = 1-p[2][0].y*0.8;
+				}				
+				
+				
+				light.position.x = 100*Math.sin(3*time);
+				
+				renderer.render( scene, camera );
+			}
+
+		</script>
+	</body>
+</html>
