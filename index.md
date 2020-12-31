@@ -1,7 +1,7 @@
 This is a repository for the source code of various 3D programlets.
 
 ### Happy New Year [Three.js]
-A small, not quite polished, New Year greeting card for all Three.js-ers. [Live demo](threejs/happy-new-year.html). 
+A small animated New Year greeting card for all Three.js-ers. [Live demo](threejs/happy-new-year.html). 
 
 ### Interference [WebGL]
 Interference is the phenomenon when two or more waves interfere and create patterns of reinforced or cancelled displacements. This model overlaps bluish sine waves and reddish cosine waves [Live demo](webgl/interference.html). 
