@@ -1,5 +1,8 @@
 This is a repository for the source code of various 3D programlets.
 
+### Rolling ball [Three.js]
+Rolling a ball along a curved path requires rotation around a moving axis. This is achieved by using `rotateOnWorldAxis` on an axis perpendicular to the direction of rolling. The angle of rotation is the travelled distance devided by the ball's radius. [Live demo](threejs/rolling-ball.html). 
+
 ### Happy New Year [Three.js]
 A small animated New Year greeting card for all Three.js-ers. [Live demo](threejs/happy-new-year.html). 
 

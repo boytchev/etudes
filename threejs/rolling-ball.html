@@ -1,0 +1,142 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="three.min.js"></script>
+		<link rel="stylesheet" href="../etudes.css">
+	</head>
+	
+	<body>
+		<h1 class="white">Rolling ball <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		
+		<script>
+			// Textures from https://3dtextures.me
+			// All textures on this site are licensed as CC0.
+
+
+
+			// ball radius
+			
+			const R = 25;
+			
+			
+			// construct and setup the scene
+			
+			var renderer = new THREE.WebGLRenderer( {antialias:true} );
+				renderer.setAnimationLoop( animate );
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+
+			var scene = new THREE.Scene();
+				scene.background = new THREE.Color( 'white' );
+
+			var camera = new THREE.PerspectiveCamera( 60, 1, 1, 1000 );
+				camera.position.set( 0, 100, 100 );
+				camera.lookAt( scene.position );
+			
+			var light = new THREE.PointLight( 'white', 1.5 );
+				light.position.set( 0, 150, 300 );
+				scene.add( light );
+				scene.add( new THREE.AmbientLight( 'white', 0.3 ) );
+			
+			var clock = new THREE.Clock( true );
+
+
+			// helper function to load a texture
+			function texture( url, scalex, scaley )
+			{
+				var map = new THREE.TextureLoader().load( 'rolling-ball/'+url );
+				
+				map.repeat.set( scalex, scaley );
+				
+				map.wrapS = THREE.RepeatWrapping;
+				map.wrapT = THREE.RepeatWrapping;
+				
+				return map;
+			}
+			
+			// construct the ground
+			
+			var ground = new THREE.Mesh(
+					new THREE.PlaneBufferGeometry( 2000, 2000 ),
+					new THREE.MeshStandardMaterial( {color: 'white', depthWrite: false,
+					map: texture( 'Concrete_Wall_007_basecolor.jpg', 10, 10 ),
+					normalMap: texture( 'Concrete_Wall_007_normal.jpg', 10, 10 ),
+					normalScale: new THREE.Vector2(0.5,0.5),
+					} )
+				);
+				ground.position.y = -R;
+				ground.rotation.x = -Math.PI/2;
+				scene.add( ground );
+				
+			var geometry = new THREE.SphereBufferGeometry( R, 100, 50 ),
+				material = new THREE.MeshPhongMaterial( {
+					color: 'white',
+					shininess: 40,
+					map: texture( 'Abstract_008_basecolor.jpg', 2, 1 ),
+					normalMap: texture( 'Abstract_008_normal.jpg', 2, 1 ),
+					normalScale: new THREE.Vector2(3,3),
+					 } ),
+				ball = new THREE.Mesh( geometry, material );
+				scene.add( ball );
+			
+			var shadow = new THREE.PointLight( 'white', -2 ); // negative light!!!
+				shadow.position.y = -0.6*R;
+				scene.add( shadow );
+			// maintain full screen
+			
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+			
+			function onWindowResize( event )
+			{
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight, true );
+			}			
+
+
+			var oldPosition = new THREE.Vector3(),
+				direction = new THREE.Vector3(),
+				axis = new THREE.Vector3();
+			
+			// animation loop
+			function animate()
+			{
+				var time = clock.getElapsedTime();
+
+				// copy the old position
+				oldPosition.copy( ball.position );
+				
+				// move the ball
+				var k = 0.5+0.5*Math.sin(2*time);
+				ball.position.x = 40*Math.sin(1.3*time)*k+(1-k)*40*Math.sin(1.7*time);
+				ball.position.z = 40*Math.cos(1.7*time)*k+(1-k)*40*Math.cos(1.5*time);
+
+				// travelled distance
+				var distance = oldPosition.distanceTo( ball.position );
+				
+				// travelled direction
+				direction.copy( ball.position ).sub( oldPosition ).normalize();
+				
+				// get axis of rotation
+				axis.set( direction.z, 0, -direction.x );
+				
+				// roll the ball
+				ball.rotateOnWorldAxis( axis, distance / R );
+				shadow.position.x = ball.position.x;
+				shadow.position.z = ball.position.z;
+				
+				scene.rotation.y = time/10;
+				
+				renderer.render( scene, camera );
+			}
+			
+		</script>
+	</body>
+</html>
+
+
