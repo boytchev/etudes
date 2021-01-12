@@ -1,0 +1,167 @@
+﻿<!DOCTYPE html>
+
+<head>
+	<meta charset="utf-8"/>
+
+	<script src="etudes-webgl.js"></script>	
+	
+	<link rel="stylesheet" href="../etudes.css">
+	
+	<script id="vshader" type="x-shader/x-vertex">
+		uniform mat4 uProjectionMatrix;
+		uniform mat4 uViewMatrix;
+		uniform mat4 uModelMatrix;
+		uniform mat4 uNormalMatrix;
+		uniform bool uUseNormalMatrix;
+
+		uniform vec3 uAmbientColor;
+		uniform vec3 uDiffuseColor;
+
+		uniform vec3 uLightDir;
+
+		attribute vec3 aXYZ;
+		attribute vec2 aST;
+		attribute vec3 aColor;
+		attribute vec3 aNormal;
+
+		varying vec3 vST;
+		varying vec3 vColor;
+
+		void main ()
+		{
+			mat4 mvMatrix = uViewMatrix * uModelMatrix;
+			gl_Position = uProjectionMatrix * mvMatrix * vec4(aXYZ,1);
+			mat4 nMatrix = uUseNormalMatrix?uNormalMatrix:mvMatrix;
+
+			vST = vec3(aST,1);
+			vColor = uAmbientColor*aColor;
+
+			vec3 light = normalize(-uLightDir);
+			vec3 normal = vec3(normalize(nMatrix*vec4(aNormal,0)));
+			vColor += aColor*uDiffuseColor*abs(dot(normal,light));
+		}
+	</script>
+	
+	<script id="fshader" type="x-shader/x-fragment">
+		precision mediump float;
+		uniform sampler2D uMossUnit;
+		uniform sampler2D uIceUnit;
+		uniform sampler2D uTimeUnit;
+		uniform mat3 uTexMatrix;
+		uniform float uTime;
+		
+		varying vec3 vST;
+		varying vec3 vColor;
+		void main( )
+		{
+			vec4 texCol1 = texture2D(uMossUnit,(uTexMatrix*vST).st);
+			vec4 texCol2 = texture2D(uIceUnit,(uTexMatrix*vST).st);
+			float k = uTime+texture2D(uTimeUnit,(uTexMatrix*vST).st).r;
+			if(k>1.0){k=1.0;}
+			if(k<0.0){k=0.0;}
+			vec4 texCol = texCol1*k+(1.0-k)*texCol2;
+			gl_FragColor = texCol*vec4(vColor,1.0);
+		}
+	</script>
+
+	<script>
+		function start( )
+		{
+			init( );
+			
+			window.addEventListener( 'resize', resize, false );
+			resize( );
+			
+			drawFrame( );
+		}
+			
+			
+		function init()
+		{
+			gl = getContext( "picasso" );
+			glprog = getProgram( 'vshader', 'fshader' );
+
+			gl.enable( gl.DEPTH_TEST );
+			//gl.clearColor(1,0.9,0.9,1);
+
+			identity();
+			perspective( 30, gl.canvas.width/gl.canvas.height, 1, 40000 );
+			gl.uniform1i( uUseNormalMatrix, false );
+
+			gl.uniform3f( uAmbientColor, 0.5, 0.5, 0.5 );
+			gl.uniform3f( uDiffuseColor, 1, 1, 1 );
+			gl.uniform3f( uLightDir, 0, 0, -1 );
+
+
+			gl.uniform1i( uIceUnit, 1 );
+			texIce = loadTexture( 'freezing-cube/frost.jpg', setTexIce );
+
+			gl.uniform1i( uTimeUnit, 2 );
+			texTime = loadTexture( 'freezing-cube/time.jpg', setTexTime );
+
+			gl.uniform1i( uMossUnit, 0 );
+			CYLINDER_SIDES = 4;
+			cube = new Cylinder( [0,0,-2], 4/1.414, 4 );
+			cube.color = [ 1, 1, 1 ];
+			cube.texture = loadTexture( 'freezing-cube/moss.jpg' );
+			var m = texIdentity();
+			texScale( m, [1/2.828, 4/2.828] );
+			texTranslate( m, [0.707/2, 0.707/2, 0] );
+			texRotate( m, 45 );
+			cube.texMatrixBase = m;
+		}
+
+
+		function setTexIce( texture )
+		{
+			gl.activeTexture( gl.TEXTURE1 );
+			gl.bindTexture( gl.TEXTURE_2D, texture );
+			gl.activeTexture( gl.TEXTURE0 );
+		}
+
+
+		function setTexTime( texture )
+		{
+			gl.activeTexture( gl.TEXTURE2 );
+			gl.bindTexture( gl.TEXTURE_2D, texture );
+			gl.activeTexture( gl.TEXTURE0 );
+		}
+
+
+		function drawFrame( )
+		{
+			requestAnimationFrame( drawFrame );
+
+			time = Date.now()/1000;
+
+			gl.clearColor( 0.9, 0.9, 0.8-0.1*Math.sin(time/2), 1 );
+			gl.clear( gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT );
+			
+			identity();
+			lookAt( [12*Math.cos(time/4), 12*Math.sin(time/4), 8], [0,0,1/4], [0,0,1] );
+			yRotate( 10*time );
+
+			gl.uniform1f( uTime, Math.sin(time/2) );
+			cube.draw();
+		}
+		
+		
+		function resize( )
+		{
+			gl.canvas.width = window.innerWidth;
+			gl.canvas.height = window.innerHeight;
+			
+			gl.viewport( 0, 0, window.innerWidth, window.innerHeight );
+
+			perspective( 30, gl.canvas.width/gl.canvas.height, 1, 1000);
+		}
+	</script>	
+</head>
+
+<body onload="start()">
+	<h1>Freezing cube <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+	
+	<canvas id="picasso" style="border: none; position:fixed; top:0; left:0; width:100%; height:100%;">
+		No canvas
+	</canvas>
+</body>

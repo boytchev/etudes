@@ -86,7 +86,7 @@ function getVariables( glprog )
 	{
         var name = gl.getActiveUniform( glprog, i ).name;
 		name = name.replace('[0]','')
-		console.log(name);
+		//console.log(name);
         window[name] = gl.getUniformLocation( glprog, name );
     }
 
@@ -752,4 +752,181 @@ RotationalSolid.prototype.draw = function()
 	gl.uniform1i(uUseNormalMatrix,false);
 
 	popMatrix();
+}
+
+
+function loadTexture(url,post)
+{
+	var texture = gl.createTexture();
+	var image = new Image();
+	image.onload = function()
+	{
+		imageLoaded(texture,image);
+		if (post) post(texture);
+	};
+	image.src = url;
+	return texture;
+}
+	
+	
+function imageLoaded(texture,image)
+{
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+	gl.generateMipmap(gl.TEXTURE_2D);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+	gl.bindTexture(gl.TEXTURE_2D, null);
+}
+
+
+CanonicalCylinder = function(n)
+{	
+	var a = 0, dA = 2*Math.PI/n;
+
+	var data = [0,0,0, 0,0,-1, 0.5,0.5];
+	for (var i=0; i<=n; i++)
+	{ 
+		data.push(Math.cos(a),Math.sin(a),0,0,0,-1, 0.5+0.5*Math.cos(a),0.5+0.5*Math.sin(a));
+		a += dA;
+	}
+
+	data.push(0,0,1, 0,0,1, 0.5,0.5);
+	for (var i=0; i<=n; i++)
+	{ 
+		data.push(Math.cos(a),Math.sin(a),1,0,0,1, 0.5+0.5*Math.cos(a),0.5+0.5*Math.sin(a));
+		a += dA;
+	}
+
+	a = 0;
+	var nZ = Math.cos(Math.PI/n);
+	for (var i=0; i<=n; i++)
+	{ 
+		var N = [Math.cos(a),Math.sin(a)];
+		var M = [Math.cos(a+dA),Math.sin(a+dA)];
+		data.push(Math.cos(a),Math.sin(a),1,N[0],N[1],0, i/n,1);
+		data.push(Math.cos(a),Math.sin(a),0,N[0],N[1],0, i/n,0);
+		data.push(Math.cos(a+dA),Math.sin(a+dA),0,M[0],M[1],0, (i+1)/n,0);
+		data.push(Math.cos(a+dA),Math.sin(a+dA),1,M[0],M[1],0, (i+1)/n,1);
+		data.push(Math.cos(a+dA),Math.sin(a+dA),0,M[0],M[1],0, (i+1)/n,0);
+		data.push(Math.cos(a),Math.sin(a),1,N[0],N[1],0, i/n,1);
+		a += dA;
+	}
+	
+	var buf = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+	
+	this.n = n;
+	this.buf = buf;
+}
+
+CanonicalCylinder.prototype.draw = function(hollow, texture, texMatrix, texMatrixBase)
+{	
+	gl.bindBuffer(gl.ARRAY_BUFFER,this.buf);
+
+	gl.enableVertexAttribArray(aXYZ);
+	gl.vertexAttribPointer(aXYZ,3,gl.FLOAT,false,8*FLOATS,0*FLOATS);
+
+	gl.enableVertexAttribArray(aNormal);
+	gl.vertexAttribPointer(aNormal,3,gl.FLOAT,false,8*FLOATS,3*FLOATS);
+
+	if (gl.isTexture(texture))
+	{
+		gl.bindTexture(gl.TEXTURE_2D,texture);
+		gl.enableVertexAttribArray(aST);
+		gl.vertexAttribPointer(aST,2,gl.FLOAT,false,8*FLOATS,6*FLOATS);
+	}
+	else
+	{
+		gl.disableVertexAttribArray(aST);
+	}
+
+	if (!hollow)
+	{
+		gl.uniformMatrix3fv(uTexMatrix,false,texMatrixBase);
+		gl.drawArrays(gl.TRIANGLE_FAN,0,this.n+2);
+		gl.drawArrays(gl.TRIANGLE_FAN,this.n+2,this.n+2);
+	}
+
+	gl.uniformMatrix3fv(uTexMatrix,false,texMatrix);
+	gl.drawArrays(gl.TRIANGLES,2*this.n+4,6*this.n);
+}
+
+var canonicalCylinder = [];
+
+var CYLINDER_SIDES = 32;
+Cylinder = function(center,size,height)
+{
+	this.center = center;
+	this.size = size;
+	this.height = height;
+	this.n = CYLINDER_SIDES;
+	this.color = [1,0.75,0];
+	this.offset = undefined;
+	this.hollow = false;
+	this.rot = undefined;
+	this.texture = undefined;
+	this.texMatrix = new Float32Array([1,0,0,0,1,0,0,0,1]);
+	this.texMatrixBase = new Float32Array([1,0,0,0,1,0,0,0,1]); 
+	if (!canonicalCylinder[this.n])
+		canonicalCylinder[this.n] = new CanonicalCylinder(this.n);
+}
+
+Cylinder.prototype.draw = function()
+{
+	pushMatrix();
+	gl.vertexAttrib3fv(aColor,this.color);
+	translate(this.center);
+	if (this.rot)
+	{
+		if (this.rot[0]) zRotate(this.rot[0]);
+		if (this.rot[1]) yRotate(this.rot[1]);
+		if (this.rot[2]) xRotate(this.rot[2]);
+		if (this.rot[3]) zRotate(this.rot[3]);
+	}
+	scale([this.size,this.size,this.height]);
+	if (this.offset) translate(this.offset);
+	useMatrix();
+	canonicalCylinder[this.n].draw(this.hollow,this.texture,this.texMatrix,this.texMatrixBase);
+	popMatrix();
+}
+
+
+function texIdentity()
+{
+	return new Float32Array([1,0,0,0,1,0,0,0,1]);
+}
+
+
+function texTranslate(m,v)
+{
+	m[6] += m[0]*v[0]+m[3]*v[1];
+	m[7] += m[1]*v[0]+m[4]*v[1];
+}
+
+function texScale(m,v)
+{
+	m[0] *= v[0];
+	m[1] *= v[0];
+	
+	m[3] *= v[1];
+	m[4] *= v[1];
+}
+
+
+function texRotate(m,a)
+{
+	a = radians(a);
+	var s = Math.sin(a);
+	var c = Math.cos(a);
+	
+	a = m[0]*s+m[3]*c;
+	m[0]=m[0]*c-m[3]*s;
+	m[3]=a;
+	
+	a = m[1]*s+m[4]*c;
+	m[1]=m[1]*c-m[4]*s;
+	m[4]=a;
 }
