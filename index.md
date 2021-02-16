@@ -1,5 +1,8 @@
 This is a repository for the source code of various 3D programlets.
 
+### Tentacle with suckers [Three.js]
+Skinned mesh works fine with displacement and bump maps. The skeleton is responsible for the tentacle motion. The displacement map extrudes the suckers as 3D shapes. The bump map fixes the lighting. The trick is that the texture for the displacement and bump is the same [Live demo](threejs/tentacle-with-suckers.html). 
+
 ### Freezing cube [WebGL]
 Textured can be used to represent time offsets. The cube in this étude changes its texture from [moss](webgl/freezing-cube/moss.jpg) to [ice](webgl/freezing-cube/frost.jpg) based on a [temporal texture](webgl/freezing-cube/time.jpg). Thus time factor of each texel is modified by the corresponding texel from the temporal texture. [Live demo](webgl/freezing-cube.html). 
 
