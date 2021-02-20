@@ -1,0 +1,214 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="three.min.js"></script>
+		<link rel="stylesheet" href="../etudes.css">
+	</head>
+	
+	<body>
+		<h1 class="white">Psychedelic tapeworm <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		
+		<script>
+
+			// generate bubble texture
+			
+			var canvas = document.createElement('canvas');
+				canvas.width = 32;
+				canvas.height = 32;
+				
+			var context = canvas.getContext('2d');
+
+			var gradient = context.createRadialGradient( 15, 15, 2, 15, 15, 15 );
+				gradient.addColorStop( 0.2, 'rgb(255,255,255,0.1)' );
+				gradient.addColorStop( 0.6, 'black' );
+				gradient.addColorStop( 0.7, 'lightgray' );
+				gradient.addColorStop( 1, 'rgba(0,0,0,0)' );
+
+			context.fillStyle = gradient;
+			context.fillRect(0, 0, 32, 32 );
+
+			var bubbleTexture = new THREE.CanvasTexture( canvas );
+			
+			
+			// construct and setup the scene
+			
+			var renderer = new THREE.WebGLRenderer( {antialias:true} );
+				renderer.setAnimationLoop( animate );
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+
+			var scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0, 0, 0.1 );
+
+			var camera = new THREE.PerspectiveCamera( 40, 1, 1, 1000 );
+				camera.position.set( 0, 0, 150 );
+				camera.lookAt( scene.position );
+			
+			var light = new THREE.PointLight( 'white', 1 );
+				light.position.set( 100, 150, 300 );
+				scene.add( light );
+			
+			var clock = new THREE.Clock( true );
+	
+			
+			// tapeworm skeleton of n bones
+			
+			var n = 20,
+				boneSize = 10,
+				size = n * boneSize,
+				bones = [];
+				
+			for( var i=0; i<=n; i++ )
+			{
+				bones[i] = new THREE.Bone();
+				if( i ) bones[i-1].add( bones[i] );
+				bones[i].position.x = i ? boneSize : -size/2;
+			}
+			
+			skeleton = new THREE.Skeleton( bones );
+			
+			
+			// tapewrm skin
+			
+			var geometry = new THREE.SphereBufferGeometry(size/2,128,128).rotateZ(Math.PI/4).scale(1,0.07,0.02),
+				skinIndices = [],
+				skinWeights = [];
+
+			var pos = geometry.getAttribute( 'position' );
+			for( var i = 0; i<pos.count; i++ )
+			{
+				var x = pos.getX( i ) + size/2,
+					bone = Math.floor(Math.min(x/boneSize,n)),
+					k = (x/boneSize) % 1;
+
+				var cos = Math.cos(Math.PI*2/3*(k-0.5));
+				
+				if( k<0.5 )
+					skinIndices.push( bone, Math.max(bone-1,0), 0, 0 );
+				else
+					skinIndices.push( bone, Math.min(bone+1,n), 0, 0 );
+				skinWeights.push( cos, 1-cos, 0, 0 );
+				
+			}
+	
+			geometry.setAttribute( 'skinIndex', new THREE.Uint16BufferAttribute( skinIndices, 4 ) );
+			geometry.setAttribute( 'skinWeight', new THREE.Float32BufferAttribute( skinWeights, 4 ) );
+
+
+			// building the tapeworm
+			
+			var material = new THREE.MeshPhongMaterial({color:'midnightblue',skinning:true,flatShading:true,shininess:150}),
+				tapeworm = new THREE.SkinnedMesh( geometry, material );
+				tapeworm.add( skeleton.bones[0] );
+				tapeworm.bind( skeleton );
+				tapeworm.position.x = size/10;
+				
+			scene.add( tapeworm );
+
+
+			// light for psychedilic effect
+			
+			var lights = [];
+			for( var i=0; i<n; i++ ) lights.push( new THREE.PointLight( ['white','crimson','cyan'][i%3], 1 ) );
+			scene.add( ...lights );
+			
+			light.intensity = -0.2;
+
+
+			// bubbles
+			
+			var bubblesGeometry = new THREE.Geometry();
+			for (var i=0; i<25*n; i++) 
+				bubblesGeometry.vertices.push( new THREE.Vector3(
+										THREE.Math.randFloatSpread( 500 ),
+										THREE.Math.randFloatSpread( 150 ),
+										THREE.Math.randFloatSpread( 100 )
+									) );
+						
+			var bubblesMaterial = new THREE.PointsMaterial( {
+				color: 'lightblue',
+				size: 6,
+				map: bubbleTexture,
+				transparent: true,
+				depthWrite: false,
+				opacity: 0.5
+			});
+			
+			var bubbles = new THREE.Points( bubblesGeometry, bubblesMaterial );
+				scene.add( bubbles );
+
+		
+			// maintain full screen
+			
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+			
+			function onWindowResize( event )
+			{
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight, true );
+			}			
+
+
+			// animation loop
+
+			function animate()
+			{
+				var time = clock.getElapsedTime();
+
+				
+				// tapeworm motion
+				
+				tapeworm.rotation.z = -0.1*Math.cos( 1.9*time );
+				tapeworm.position.y = -10.2*Math.cos( 1.9*time );
+
+				for( var i = 1; i<=n; i++ )
+				{
+					skeleton.bones[i].rotation.x = THREE.Math.degToRad( i*1*Math.cos(0.2*time+i*i) );
+					skeleton.bones[i].rotation.z = THREE.Math.degToRad( i*5*Math.sin(1.9*time-i) );
+				}
+
+				skeleton.bones[0].rotation.z = THREE.Math.degToRad( 20*Math.cos(1.9/2*time) );
+				skeleton.bones[1].rotation.z = -skeleton.bones[0].rotation.z/2;
+				skeleton.bones[2].rotation.z = -skeleton.bones[0].rotation.z/2;
+
+				
+				// psychedelic lights motion
+				
+				for( var i = 0; i<n; i++ )
+					lights[i].position.setFromSphericalCoords( size, 10*time*Math.sign(i%2-0.5) + i/n*Math.PI*2, Math.PI/2+0.2*Math.sin(50*time) );
+				
+				
+				// bubbles motion
+				
+				for( var i=0; i<25*n; i++ )
+				{
+					var v = bubblesGeometry.vertices[i];
+					v.x += 0.1 * Math.cos( i/30 + time/70 ) + 0.2;
+					v.y += 0.1 * Math.sin( i/10  + time/40 );
+					v.z += 0.1 * Math.cos( i/50  + time/20 );
+			
+					// recycle after it falls bahind
+					if( v.x >300 )
+						v.set( -300-50*Math.random(),
+							   THREE.Math.randFloatSpread( 150 ),
+							   THREE.Math.randFloatSpread( 100 )
+							  );
+
+				}
+				
+				bubblesGeometry.verticesNeedUpdate = true
+
+
+				renderer.render( scene, camera );
+			}
+		</script>
+	</body>
+</html>
+
+
