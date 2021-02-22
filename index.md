@@ -1,5 +1,8 @@
 This is a repository for the source code of various 3D programlets.
 
+### Negative morphs [Three.js]
+Do you know that morph target influence could be negative? Thus the morth target will not attract, but repel the shape. This étude use three spheres as morth targets with user-defined interactive influence. [Live demo](threejs/negative-morphs.html). 
+
 ### Psychedelic tapeworm [Three.js]
 A deformed sphere with 21 bones and fast lights are enough to create a psychedelic tapeworm. [Live demo](threejs/psychedelic-tapeworm.html). 
 

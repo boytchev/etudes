@@ -1,0 +1,113 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<title>E1216: Морфинг на глава</title>
+		<meta charset="utf-8">
+		
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		
+		<script src="three.min.js"></script>
+		<script src="dat.gui.min.js"></script>
+		<script src="GLTFLoader.js"></script>
+		<script src="WebGL.js"></script>
+		<script src="vax.js"></script>
+	</head>
+	
+	<body>
+		<script>
+			vaxInit();
+				
+			scene.background = new THREE.Color( 'lightgray' );
+			
+			// интерактивно контролиране на главата
+			var gui = new dat.GUI();
+			gui.domElement.style.marginRight = 0;
+			var pose = {
+				k0: 0, // влияние на сферата
+				k1: 0, // влияние на сферата
+			};
+			gui.add( pose, 'k0', -0.3, 0.5 ).name('Мозък').step(0.01);
+			gui.add( pose, 'k1', -0.3, 0.5 ).name('Врат').step(0.01);
+			gui.open();
+
+			var light = new THREE.PointLight( 'white', 1 );
+				light.position.z = -50;
+				scene.add( light );
+				
+			// създаване на глава
+			var loader = new THREE.GLTFLoader();
+				loader.load( 'LeePerrySmith/LeePerrySmith.glb', objectLoaded );
+				
+			var lee,
+				ready = false;
+			
+			function objectLoaded( gltf )
+			{
+				lee = gltf.scene.children[ 0 ];
+				lee.material = new THREE.MeshPhongMaterial( {
+					specular: 0x111111,
+					map: new THREE.TextureLoader().load( 'LeePerrySmith/Map-COL.jpg' ),
+					specularMap: new THREE.TextureLoader().load( 'LeePerrySmith/Map-SPEC.jpg' ),
+					normalMap: new THREE.TextureLoader().load( 'LeePerrySmith/Infinite-Level_02_Tangent_SmoothUV.jpg' ),
+					displacementMap: new THREE.TextureLoader().load( 'LeePerrySmith/Infinite-Level_02_Disp_NoSmoothUV-4096.jpg' ),
+					shininess: 25,
+					morphTargets: true
+				} );
+
+				lee.geometry.scale( 10, 10, 10 );
+				lee.geometry.translate( 0, -15, 0 );
+				
+				var ballPositions0 = [],
+					ballPositions1 = [],
+					pos = lee.geometry.getAttribute( 'position' ),
+					vec = new THREE.Vector3(); // оборотни цели
+
+				// изчисляване на върховете и нормалите по сфера и плочка
+				for( var i=0; i<pos.count; i++ )
+				{
+					vec.set( pos.getX(i), pos.getY(i)-15, pos.getZ(i) );
+					vec.setLength( 40 );
+					ballPositions0.push( vec.x, vec.y, vec.z );
+					
+					vec.set( pos.getX(i), pos.getY(i)+15, pos.getZ(i) );
+					vec.setLength( 40 );
+					ballPositions1.push( vec.x, vec.y, vec.z );
+				}
+				
+				lee.geometry.morphAttributes.position = [
+					new THREE.Float32BufferAttribute( ballPositions0, 3 ),
+					new THREE.Float32BufferAttribute( ballPositions1, 3 )
+				]
+				
+				lee.morphTargetInfluences = [0,0];
+				lee.position.y = 10;
+				
+				scene.add( lee );
+				
+				secondLee = new THREE.Mesh( lee.geometry, lee.material.clone() );
+				secondLee.position.y = 10;
+				secondLee.material.transparent = true;
+				secondLee.material.opacity = 0.3;
+				//scene.add( secondLee );
+				
+				ready = true;
+			}
+				
+
+			function animate()
+			{
+				// промяна на "силата" на морфинга
+				if( ready )
+				{
+					lee.morphTargetInfluences[ 0 ] = pose.k0;
+					lee.morphTargetInfluences[ 1 ] = pose.k1;
+				}
+								
+				scene.rotation.y = Math.sin( t );
+			}
+		</script>	
+	</body>
+</html>
+
+
