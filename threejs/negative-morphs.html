@@ -40,10 +40,12 @@
 			var gui = new dat.GUI();
 				gui.domElement.style = 'position: fixed; margin-right:0; z-index:2; top: 4em;';
 				var pose = {
+					reset: function(){pose.k0=pose.k1=pose.k2=0; gui.updateDisplay();},
 					k0: 0,
 					k1: 0,
 					k2: 0,
 				};
+				gui.add( pose, 'reset' ).name( 'Reset Morphs' );
 				gui.add( pose, 'k0', -0.3, 0.5 ).name('Top').step(0.01);
 				gui.add( pose, 'k1', -0.3, 0.5 ).name('Middle').step(0.01);
 				gui.add( pose, 'k2', -0.3, 0.5 ).name('Bottom').step(0.01);
