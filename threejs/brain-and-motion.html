@@ -12,7 +12,7 @@
 	</head>
 
 	<body>
-		<h1 class="white">Predator's brain <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		<h1 class="white">Brain and motion <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
 		
 		<script>
 			// construct and setup the scene
@@ -27,7 +27,7 @@
 				scene.background = new THREE.Color( 'black' );
 
 			var map = myTexture();
-				map.repeat.set( 4, 4 );
+				map.repeat.set( 6, 6 );
 
 			var ground = new THREE.Mesh(
 					new THREE.BoxBufferGeometry( 1800, 10, 1800 ),
@@ -41,15 +41,26 @@
 
 			var clock = new THREE.Clock( true );
 			
-			// two secret objects
+			// a secret object
 			var map = map.clone();
-				map.repeat.set( 0.27, 0.27 );
+				map.repeat.set( 0.45, 0.45 );
 			var object = new THREE.Mesh(
 					new THREE.PlaneBufferGeometry( 100, 100 ),
 					new THREE.MeshBasicMaterial( {map: map} )
 				);
 				object.rotation.x = -Math.PI/2;
 				object.position.set( 80, 60, 0 );
+				scene.add( object );
+
+			// a second secret object
+			var map = map.clone();
+				map.repeat.set( 0.6, 0.6 );
+			var object = new THREE.Mesh(
+					new THREE.CircleBufferGeometry( 50, 64 ),
+					new THREE.MeshBasicMaterial( {map: map} )
+				);
+				object.rotation.x = -Math.PI/2;
+				object.position.set( -120, 100, 0 );
 				scene.add( object );
 
 			// maintain full screen
@@ -77,7 +88,7 @@
 		
 				for( var i=0; i<100000; i++ )
 				{
-					ctx.fillStyle = 'hsl(0,0%,'+(100*Math.random())+'%)';
+					ctx.fillStyle = 'hsl('+(30+140*Math.random())+',70%,'+(100*Math.random())+'%)';
 					ctx.fillRect( THREE.Math.randInt(0,255), THREE.Math.randInt(0,255), 1, 1 );
 				}
 				
@@ -93,8 +104,8 @@
 				var dTime = clock.getDelta(),
 					time = clock.getElapsedTime();
 				
-				if( time%8 < 3 )
-					scene.rotation.y += dTime/2;
+				if( time%10 < 5 )
+					scene.rotation.y += dTime*(0.5+0.5*Math.cos( (time%10-5)/2.5 * Math.PI ));
 					
 				renderer.render( scene, camera );
 			}
