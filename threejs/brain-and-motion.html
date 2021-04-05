@@ -105,7 +105,7 @@
 					time = clock.getElapsedTime();
 				
 				if( time%10 < 5 )
-					scene.rotation.y += dTime*(0.5+0.5*Math.cos( (time%10-5)/2.5 * Math.PI ));
+					scene.rotation.y += dTime*(0.5+0.5*Math.cos( (time%10-2.5)/2.5 * Math.PI ));
 					
 				renderer.render( scene, camera );
 			}
