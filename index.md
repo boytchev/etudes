@@ -1,5 +1,8 @@
 This is a repository for the source code of various 3D programlets.
 
+### Predator's brain [Three.js]
+You know that the prey animal often freezes when it senses danger. That's because predator's brain is wired in a way to detect motion. Human brain is no exception. We use motion to detect shape, position in space, orientation. Do not believe me? Try it for yourself [Live demo](threejs/predator's-brain.html). 
+
 ### Negative morphs [Three.js]
 Do you know that morph target influence could be negative? Thus the morth target will not attract, but repel the shape. This étude use three spheres as morth targets with user-defined interactive influence. [Live demo](threejs/negative-morphs.html). 
 

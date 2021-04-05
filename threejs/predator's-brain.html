@@ -1,0 +1,105 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		
+		<script src="three.min.js"></script>
+		
+		<link rel="stylesheet" href="../etudes.css">
+		
+		<style>h1 {background: black; width: 100%;}</style>
+	</head>
+
+	<body>
+		<h1 class="white">Predator's brain <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		
+		<script>
+			// construct and setup the scene
+
+			var renderer = new THREE.WebGLRenderer( {antialias:true} );
+				renderer.setAnimationLoop( animate );
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+
+			var scene = new THREE.Scene();
+				scene.background = new THREE.Color( 'black' );
+
+			var map = myTexture();
+				map.repeat.set( 4, 4 );
+
+			var ground = new THREE.Mesh(
+					new THREE.BoxBufferGeometry( 1800, 10, 1800 ),
+					new THREE.MeshBasicMaterial( {map: map} )
+				);
+				scene.add( ground );
+			
+			var camera = new THREE.PerspectiveCamera( 60, 1, 1, 10000 );
+				camera.position.set(0,250,200);
+				camera.lookAt( ground.position );
+
+			var clock = new THREE.Clock( true );
+			
+			// two secret objects
+			var map = map.clone();
+				map.repeat.set( 0.27, 0.27 );
+			var object = new THREE.Mesh(
+					new THREE.PlaneBufferGeometry( 100, 100 ),
+					new THREE.MeshBasicMaterial( {map: map} )
+				);
+				object.rotation.x = -Math.PI/2;
+				object.position.set( 80, 60, 0 );
+				scene.add( object );
+
+			// maintain full screen
+			
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+
+			
+			function onWindowResize( event )
+			{
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight, true );
+			}			
+			
+			function myTexture()
+			{
+				var canvas = document.createElement('canvas'),
+				ctx = canvas.getContext('2d');
+				 
+				canvas.width = 256;
+				canvas.height = 256;
+				 
+		
+				for( var i=0; i<100000; i++ )
+				{
+					ctx.fillStyle = 'hsl(0,0%,'+(100*Math.random())+'%)';
+					ctx.fillRect( THREE.Math.randInt(0,255), THREE.Math.randInt(0,255), 1, 1 );
+				}
+				
+				var texture = new THREE.CanvasTexture(canvas);
+					texture.wrapS = THREE.RepeatWrapping;
+					texture.wrapT = THREE.RepeatWrapping;
+
+				return texture;
+			}
+			
+			function animate()
+			{
+				var dTime = clock.getDelta(),
+					time = clock.getElapsedTime();
+				
+				if( time%8 < 3 )
+					scene.rotation.y += dTime/2;
+					
+				renderer.render( scene, camera );
+			}
+		</script>
+	</body>
+</html>
+
+
