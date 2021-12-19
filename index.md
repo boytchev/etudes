@@ -1,5 +1,8 @@
 This is a repository for the source code of various 3D programlets.
 
+### Clipping [Three.js]
+Once a student asked me how to cap clipped object without stencil buffers and without CSG. It appears it is possible to make fake capping by drawing the back faces of the models (they are seen through the clipped areas) in flat colour. [Live demo](threejs/capping-clipping.html). 
+
 ### Brain and motion [Three.js]
 You know that animals' brains are wired in a way to detect motion. The human brain is no exception. We use motion to detect shape, position and orientation ot objects. Do not believe me? Try it for yourself [Live demo](threejs/brain-and-motion.html). 
 
