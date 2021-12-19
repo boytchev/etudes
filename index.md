@@ -1,6 +1,6 @@
 This is a repository for the source code of various 3D programlets.
 
-### Clipping [Three.js]
+### Capping clipping [Three.js]
 Once a student asked me how to cap clipped object without stencil buffers and without CSG. It appears it is possible to make fake capping by drawing the back faces of the models (they are seen through the clipped areas) in flat colour. [Live demo](threejs/capping-clipping.html). 
 
 ### Brain and motion [Three.js]
