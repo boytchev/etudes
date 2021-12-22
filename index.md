@@ -1,7 +1,7 @@
 This is a repository for the source code of various 3D programlets.
 
-### Ghost [Three.js]
-Insired by the generative art and creative coding by Senbaku [posted here](https://twitter.com/senbaku/status/1473548401019355140), let's try to model and animate it in Three.js. [Live demo](threejs/ghosts.html). 
+### Ghosts in the rain [Three.js]
+Insired by the generative art and creative coding by Senbaku [posted here](https://twitter.com/senbaku/status/1473548401019355140), let's try to model and animate it in Three.js. [Live demo](threejs/ghosts-in-the-rain.html). 
 
 ### Capping clipping [Three.js]
 Once a student asked me how to cap clipped object without stencil buffers and without CSG. It appears it is possible to make fake capping by drawing the back faces of the models (they are seen through the clipped areas) in flat colour. [Live demo](threejs/capping-clipping.html). 
