@@ -1,0 +1,124 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="three.min.js"></script>
+		<script src="GLTFLoader.js"></script>
+		<link rel="stylesheet" href="../etudes.css">
+	</head>
+	
+	<body>
+		<h1>Hollow-face illusion <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		
+		<script>
+			// construct and setup the scene
+			
+			var renderer = new THREE.WebGLRenderer( {antialias:true} );
+				renderer.setAnimationLoop( animate );
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+
+			var scene = new THREE.Scene();
+				scene.background = new THREE.Color( 'linen' );
+
+			var camera = new THREE.PerspectiveCamera( 40, 1, 1, 1000 );
+				camera.position.set( 0, 0, 30 );
+				camera.lookAt( scene.position );
+			
+			var light = new THREE.PointLight( 'white', 0.7 );
+				light.position.set( 0, 20, 100 );
+				scene.add( light );
+				
+			var clock = new THREE.Clock( true );
+				
+				
+			// loader for face
+			// face based on FemaleHead V4 3D Model
+			// by printable_models
+			// https://free3d.com/3d-model/femalehead-v4--971578.html
+			
+			var loader = new THREE.GLTFLoader();
+				loader.load( 'hollow-face-illusion/face.glb', objectLoaded );
+				
+			var face,
+				ready = false;
+			
+			function objectLoaded( gltf )
+			{
+				face = gltf.scene.children[ 2 ];
+				face.geometry.translate( 0, 0, 8 );
+				face.material = new THREE.MeshStandardMaterial( {
+					color: 'moccasin',
+					emissive: 'pink',
+					emissiveIntensity: 0.2,
+					side: THREE.DoubleSide,
+					metalness: 0,
+					roughness: 0.5,
+					} );
+
+				face.position.z = 0;
+				face.rotation.y = Math.PI/2;
+				ground.add( face );
+				
+				face = face.clone();
+				face.position.x = -0;
+				face.rotation.y = -Math.PI/2;
+				ground.add( face );
+
+				ready = true;
+			}
+
+			
+			// helper function to load a texture
+			function texture( url, scalex, scaley )
+			{
+				var map = new THREE.TextureLoader().load( 'rolling-ball/'+url );
+				
+				map.repeat.set( scalex, scaley );
+				
+				map.wrapS = THREE.RepeatWrapping;
+				map.wrapT = THREE.RepeatWrapping;
+				
+				return map;
+			}
+
+			var ground = new THREE.Mesh(
+					new THREE.BoxGeometry( 20, 0.1, 10 ),
+					new THREE.MeshBasicMaterial( {color: 'black'} )
+				);
+				ground.position.y = -6;
+				scene.add( ground );
+
+
+			// maintain full screen
+			
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+			
+			function onWindowResize( event )
+			{
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight, true );
+			}			
+
+
+			// animation loop
+
+			function animate()
+			{
+				var time = clock.getElapsedTime();
+
+				ground.rotation.y = time/2+Math.sin(time)/3;
+				ground.rotation.x = Math.sin(1.75*time)/2;
+				
+				renderer.render( scene, camera );
+			}
+		</script>
+	</body>
+</html>
+
+
