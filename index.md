@@ -1,5 +1,8 @@
 This is a repository for the source code of various 3D programlets.
 
+### Voronoiless [Three.js]
+Voronoi diagrams [more info](https://en.wikipedia.org/wiki/Voronoi_diagram) partitions the plane into regions based on a set of points. This etude demonstrates how to construct a Voronoi diagram based on an image without any special algorithm [Live demo](threejs/voronoiless.html).
+
 ### Hollow-face illusion [Three.js]
 The hollow-face illusion [more info](https://en.wikipedia.org/wiki/Hollow-Face_illusion), tricks our brains to think that a concave shape is convex. The illusion works not only horizontally, but also &ndash; vertically [Live demo](threejs/hollow-face-illusion.html).
 
