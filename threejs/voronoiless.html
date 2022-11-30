@@ -1,0 +1,133 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="three.min.js"></script>
+		<link rel="stylesheet" href="../etudes.css">
+	</head>
+	
+	<body onload="onLoad()">
+		<h1>Voronoiless <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		<h3><span id="cellCount"></span> cells</h3>
+		
+		<script>
+
+			// Image URL: https://pixabay.com/photos/cosplay-warrior-devil-katana-sword-6498021/
+			// Author: TaniaVdB
+			// License: Pixabay License (https://pixabay.com/service/license/)
+			
+			const IMAGE_URL = 'voronoiless/cosplay-6498021_960_720.jpg',
+			      MAX_CELL_COUNT = 500000;
+			
+			var cellCount,
+				cellBatchSize,
+				cellCountElement;
+
+			// construct and setup the scene
+			
+			var renderer = new THREE.WebGLRenderer( {antialias:true, preserveDrawingBuffer:true} );
+				renderer.autoClear = false;
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+
+			var cone = new THREE.Mesh(
+				new THREE.ConeGeometry( 5000, 40, 100 ),
+				new THREE.MeshBasicMaterial()
+			);
+
+			var camera = new THREE.OrthographicCamera( );
+				camera.position.set( 0, 50, 0 );
+				camera.lookAt( cone.position );
+			
+			// load image and get its data
+
+			var image = new Image();
+				image.onload = imageLoaded;
+				image.src = IMAGE_URL;
+				
+			function imageLoaded( )
+			{
+				var canvas = document.createElement( 'canvas' );
+					canvas.width = image.width;
+					canvas.height = image.height;
+					
+				image.context = canvas.getContext( '2d' );
+				image.context.drawImage( image, 0, 0 );
+
+				renderer.setAnimationLoop( animate );
+			}
+
+			// maintain full screen
+			
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+			
+			function onWindowResize( event )
+			{
+				camera.left = -window.innerWidth/2;
+				camera.right = window.innerWidth/2;
+				camera.top = window.innerHeight/2;
+				camera.bottom = -window.innerHeight/2;
+				
+				camera.updateProjectionMatrix();
+
+				renderer.clear( false, true, false );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				
+				cellCount = 0;
+				cellBatchSize = 1;
+				if( image.context ) addVoronoiCells( 50 );
+			}			
+
+	
+			function onLoad( )
+			{
+				cellCountElement = document.getElementById( 'cellCount' );
+			}
+			
+			
+			function addVoronoiCells( n )
+			{
+				if( cellCountElement )
+				{
+					var reportCount = Math.min( cellCount, MAX_CELL_COUNT );
+					if( reportCount < 5000 )
+						cellCountElement.innerHTML = Math.round( reportCount );
+					else
+						cellCountElement.innerHTML = Math.round( reportCount/1000 )+'k';
+				}
+				
+				for( var i=0; i<n; i++)
+				{
+					
+					if( ++cellCount > MAX_CELL_COUNT ) return;
+					
+					var x = THREE.MathUtils.randInt( 0, image.width-1 ),
+						y = THREE.MathUtils.randInt( 0, image.height-1 ),
+						pixel = image.context.getImageData( x, y, 1, 1 ).data;
+
+					cone.position.x = x - image.width/2;
+					cone.position.z = y - image.height/2;
+					cone.material.color.setRGB( pixel[0]/255, pixel[1]/255, pixel[2]/255 );
+
+					cone.updateMatrixWorld( false );
+					
+					renderer.render( cone, camera );
+				}
+			}
+			
+			
+			// animation loop
+			function animate( t )
+			{
+				cellBatchSize = Math.min( 500, cellBatchSize*1.05 );
+				addVoronoiCells( cellBatchSize );
+			}
+			
+		</script>
+	</body>
+</html>
+
+
