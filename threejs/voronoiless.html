@@ -7,22 +7,21 @@
 		<link rel="stylesheet" href="../etudes.css">
 	</head>
 	
-	<body onload="onLoad()">
-		<h1>Voronoiless <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+	<body>
+		<h1>Voronoiless<a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
 		<h3><span id="cellCount"></span> cells</h3>
 		
 		<script>
 
 			// Image URL: https://pixabay.com/photos/cosplay-warrior-devil-katana-sword-6498021/
-			// Author: TaniaVdB
-			// License: Pixabay License (https://pixabay.com/service/license/)
+			// Author: TaniaVdB; License: Pixabay License (https://pixabay.com/service/license/)
 			
 			const IMAGE_URL = 'voronoiless/cosplay-6498021_960_720.jpg',
 			      MAX_CELL_COUNT = 500000;
 			
-			var cellCount,
-				cellBatchSize,
-				cellCountElement;
+			
+			var cellCount, cellBatchSize;
+
 
 			// construct and setup the scene
 			
@@ -40,6 +39,7 @@
 			var camera = new THREE.OrthographicCamera( );
 				camera.position.set( 0, 50, 0 );
 				camera.lookAt( cone.position );
+
 			
 			// load image and get its data
 
@@ -53,13 +53,16 @@
 					canvas.width = image.width;
 					canvas.height = image.height;
 					
-				image.context = canvas.getContext( '2d' );
-				image.context.drawImage( image, 0, 0 );
+				var context = canvas.getContext( '2d' );
+					context.drawImage( image, 0, 0 );
 
+				image.data = context.getImageData( 0, 0, image.width, image.height ).data;
+				
 				renderer.setAnimationLoop( animate );
 			}
 
-			// maintain full screen
+
+			// restart voronoing when window size changes
 			
 			window.addEventListener( 'resize', onWindowResize, false );
 			onWindowResize();
@@ -73,61 +76,46 @@
 				
 				camera.updateProjectionMatrix();
 
-				renderer.clear( false, true, false );
+				renderer.clear( );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				
 				cellCount = 0;
 				cellBatchSize = 1;
-				if( image.context ) addVoronoiCells( 50 );
+				if( image.data ) addVoronoiCells( 100 );
 			}			
 
 	
-			function onLoad( )
-			{
-				cellCountElement = document.getElementById( 'cellCount' );
-			}
-			
+			// add n Voronoi cells
 			
 			function addVoronoiCells( n )
 			{
-				if( cellCountElement )
+				for( ; n>0 && cellCount<MAX_CELL_COUNT; n--, cellCount++)
 				{
-					var reportCount = Math.min( cellCount, MAX_CELL_COUNT );
-					if( reportCount < 5000 )
-						cellCountElement.innerHTML = Math.round( reportCount );
-					else
-						cellCountElement.innerHTML = Math.round( reportCount/1000 )+'k';
-				}
-				
-				for( var i=0; i<n; i++)
-				{
-					
-					if( ++cellCount > MAX_CELL_COUNT ) return;
-					
 					var x = THREE.MathUtils.randInt( 0, image.width-1 ),
 						y = THREE.MathUtils.randInt( 0, image.height-1 ),
-						pixel = image.context.getImageData( x, y, 1, 1 ).data;
+						index = 4*(y*image.width + x);
 
 					cone.position.x = x - image.width/2;
 					cone.position.z = y - image.height/2;
-					cone.material.color.setRGB( pixel[0]/255, pixel[1]/255, pixel[2]/255 );
+					cone.material.color.setRGB( image.data[index]/255, image.data[index+1]/255, image.data[index+2]/255 );
 
 					cone.updateMatrixWorld( false );
 					
 					renderer.render( cone, camera );
 				}
+
+				document.getElementById( 'cellCount' ).innerHTML = Math.round( cellCount );
 			}
 			
 			
-			// animation loop
-			function animate( t )
+			// create cellBatchSize Voronoi cells per frame
+			
+			function animate( )
 			{
-				cellBatchSize = Math.min( 500, cellBatchSize*1.05 );
+				cellBatchSize = Math.min( 1234, cellBatchSize*1.02+1 );
 				addVoronoiCells( cellBatchSize );
 			}
 			
 		</script>
 	</body>
 </html>
-
-
