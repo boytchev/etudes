@@ -52,12 +52,12 @@ This is a repository for the source code of various 3D programlets.
 
 
 ### 17. [Happy New Year [Three.js]](threejs/happy-new-year.html)
-<a href="threejs/happy-new-year.html.html"><img src="snapshots/.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> A small animated New Year greeting card for all Three.js-ers.
+<a href="threejs/happy-new-year.html.html"><img src="snapshots/happy-new-year.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> A small animated New Year greeting card for all Three.js-ers.
 <div style="clear:both;"></div>
 
 
-### 16. [Interference [WebGL]](webgl/happy-new-yearinterference.html)
-<a href="webgl/happy-new-yearinterference.html"><img src="snapshots/.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Interference is the phenomenon when two or more waves interfere and create patterns of reinforced or cancelled displacements. This model overlaps bluish sine waves and reddish cosine waves.
+### 16. [Interference [WebGL]](webgl/interference.html)
+<a href="webgl/interference.html"><img src="snapshots/interference.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Interference is the phenomenon when two or more waves interfere and create patterns of reinforced or cancelled displacements. This model overlaps bluish sine waves and reddish cosine waves.
 <div style="clear:both;"></div>
 
 
