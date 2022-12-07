@@ -12,7 +12,7 @@ This is a repository for the source code of various 3D programlets.
 
 
 ### 25. [Ghosts in the rain [Three.js]](threejs/ghosts-in-the-rain.html)
-<a href="threejs/ghosts-in-the-rain.html.html"><img src="snapshots/ghosts-in-the-rain.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Insired by the generative art and creative coding by Senbaku [posted here](https://twitter.com/senbaku/status/1473548401019355140), let's try to model and animate it in Three.js. Rain is modelled by particle system with trails.
+<a href="threejs/ghosts-in-the-rain.html"><img src="snapshots/ghosts-in-the-rain.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Insired by the generative art and creative coding by Senbaku [posted here](https://twitter.com/senbaku/status/1473548401019355140), let's try to model and animate it in Three.js. Rain is modelled by particle system with trails.
 <div style="clear:both;"></div>
 
 
