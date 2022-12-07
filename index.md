@@ -52,7 +52,7 @@ This is a repository for the source code of various 3D programlets.
 
 
 ### 17. [Happy New Year [Three.js]](threejs/happy-new-year.html)
-<a href="threejs/happy-new-year.html.html"><img src="snapshots/happy-new-year.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> A small animated New Year greeting card for all Three.js-ers.
+<a href="threejs/happy-new-year.html"><img src="snapshots/happy-new-year.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> A small animated New Year greeting card for all Three.js-ers.
 <div style="clear:both;"></div>
 
 
