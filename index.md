@@ -97,7 +97,7 @@ This is a repository for the source code of various 3D programlets.
 
 
 ### 8. [Graphical integration [WebGL]](webgl/graphical-integration.html)
-<a href="webgl/graphical-integration.html"><img src="snapshots/webgl/graphical-integration.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Every curved or bending surface could be represented by a set of small flat plates. This is the computer graphics analog to mathematical integration.
+<a href="webgl/graphical-integration.html"><img src="snapshots/graphical-integration.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Every curved or bending surface could be represented by a set of small flat plates. This is the computer graphics analog to mathematical integration.
 <div style="clear:both;"></div>
 
 
