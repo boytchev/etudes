@@ -61,7 +61,7 @@ Constructive Solid Geometry ([CSG](https://en.wikipedia.org/wiki/Constructive_so
 Every curved or bending surface could be represented by a set of small flat plates. This is the computer graphics analog to mathematical integration. [Live demo](webgl/graphical-integration.html).
 
 ### Bingo balls [Three.js]
-Not all textures need to be loaded from files. These bingo balls get their textures drawn at startup via [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API). [Live demo](threejs/bingo-balls.html). 
+<a href="threejs/bingo-balls.html"><img src="snapshots/bingo-balls.jpg" width="200" style="float:right; border: solid 1px black;"></a> Not all textures need to be loaded from files. These bingo balls get their textures drawn at startup via [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API). [Live demo](threejs/bingo-balls.html). 
 
 ### Supersphere [WebGL]
 Spheres, cubes, octahedrons ... are all instances of the supesphere X<sup><small>n</small></sup> + Y<sup><small>n</small></sup> + Z<sup><small>n</small></sup> = 1. [Live demo](webgl/supersphere.html).
