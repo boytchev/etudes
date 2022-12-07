@@ -60,27 +60,38 @@ Constructive Solid Geometry ([CSG](https://en.wikipedia.org/wiki/Constructive_so
 ### Graphical integration [WebGL]
 Every curved or bending surface could be represented by a set of small flat plates. This is the computer graphics analog to mathematical integration. [Live demo](webgl/graphical-integration.html).
 
-### [Bingo balls [Three.js]](threejs/bingo-balls.html)
 
+### [Bingo balls [Three.js]](threejs/bingo-balls.html)
 <a href="threejs/bingo-balls.html"><img src="snapshots/bingo-balls.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Not all textures need to be loaded from files. These bingo balls get their textures drawn at startup via [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API).
 <div style="clear:both;"></div>
 
 
-### Supersphere [WebGL]
-Spheres, cubes, octahedrons ... are all instances of the supesphere X<sup><small>n</small></sup> + Y<sup><small>n</small></sup> + Z<sup><small>n</small></sup> = 1. [Live demo](webgl/supersphere.html).
+### [Supersphere [WebGL]](webgl/supersphere.html)
+<a href="webgl/supersphere.html"><img src="snapshots/supersphere.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Spheres, cubes, octahedrons ... are all instances of the supesphere X<sup><small>n</small></sup> + Y<sup><small>n</small></sup> + Z<sup><small>n</small></sup> = 1.
+<div style="clear:both;"></div>
 
-### Crystal planet [Three.js]
-A planet is created as a level-5 icosahedron with a randomized geometry &ndash; actually, only the distance to the center is randomized. [Live demo](threejs/crystal-planet.html). 
 
-### Neon tori [WebGL]
-Using shader to generate neonish shiny surface of a torus. Colour stripes are defined by the direction of the reflection rays. [Live demo](webgl/neon-tori.html).
+### [Crystal planet [Three.js]](threejs/crystal-planet.html)
+<a href="threejs/crystal-planet.html"><img src="snapshots/crystal-planet.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> A planet is created as a level-5 icosahedron with a randomized geometry &ndash; actually, only the distance to the center is randomized.
+<div style="clear:both;"></div>
 
-### Snowing [Three.js]
-A simple model of snowing scene. The snowflake's texture is generated programmatically. [Live demo](threejs/snowing.html). 
 
-### Hearts [WebGL]
-One of the most aesthetically pleasing heart curve is defined by (x<sup>2</sup>+y<sup>2</sup>-1)<sup>3</sup>-x<sup>2</sup>y<sup>3</sup>=0. Let's improvise on it. [Live demo](webgl/hearts.html).
+### [Neon tori [WebGL]](webgl/neon-tori.html)
+<a href="webgl/neon-tori.html"><img src="snapshots/neon-tori.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Using shader to generate neonish shiny surface of a torus. Colour stripes are defined by the direction of the reflection rays.
+<div style="clear:both;"></div>
 
-### Negative Light [Three.js]
-Three.js allows negative intensities of lights. This might be used to simulate circular soft shadows. [Live demo](threejs/negative-light.html).
+
+### [Snowing [Three.js]](threejs/snowing.html)
+<a href="threejs/snowing.html"><img src="snapshots/snowing.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> A simple model of snowing scene. The snowflake's texture is generated programmatically.
+<div style="clear:both;"></div>
+
+
+### [Hearts [WebGL]](webgl/hearts.html)
+<a href="webgl/hearts.html"><img src="snapshots/hearts.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> One of the most aesthetically pleasing heart curve is defined by (x<sup>2</sup>+y<sup>2</sup>-1)<sup>3</sup>-x<sup>2</sup>y<sup>3</sup>=0. Let's improvise on it.
+<div style="clear:both;"></div>
+
+
+### [Negative Light [Three.js]](threejs/negative-light.html)
+<a href="threejs/negative-light.html"><img src="snapshots/negative-light.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Three.js allows negative intensities of lights. This might be used to simulate circular soft shadows.
+<div style="clear:both;"></div>
 
