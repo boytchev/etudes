@@ -1,0 +1,96 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="suica.js"></script>
+		<link rel="stylesheet" href="../etudes.css">
+	</head>
+	
+	<body>
+		<h1>Maze generator <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		
+		<suica fullWindow>
+		</suica>
+		
+		<script>
+			lookAt( [0,100,0], [0,0,0], [0,0,1] );
+			
+			var sx = 32, sz = 20;
+			
+			var size = new URLSearchParams( window.location.search ).get( 'size' );
+			if( size )
+			{
+				size = size.split( 'x' );
+				sx = parseInt(size[0]) || 32;
+				sz = parseInt(size[1]) || 20;
+			}
+			
+			var dist = Math.max( sx, sz )**0.5 * 7;
+			orbit( dist, dist, 0.2 );
+			
+			var w = 0.4;
+			
+			cube( [0,-1.5,0], [sx+2*w,1,sz+2*w], 'gray' );
+			
+			function wall( x1,z1, x2,z2, height )
+			{
+				var x = (x1+x2)/2,
+					z = (z1+z2)/2;
+
+				var dx = x2-x1,
+					dz = z2-z1,
+					ww = height>0.5?w*0.9:w/6;
+					
+				if( dx+dz==0 ) return;
+
+				cube( [x,-1+height/2,z], [dx+w,height,dz+w], 'white' );
+				cube( [x,-1+height/2+0.01,z], [dx+ww,height,dz+ww], 'tomato' );
+				cube( [x,-1,z], [dx+1.2*w,0.01,dz+1.2*w], 'black' );
+			}
+			
+			function maze( x1,z1, x2,z2, height )
+			{
+				var dx = x2-x1,
+					dz = z2-z1;
+					
+				if( Math.min(dx,dz) < 2 ) return;
+
+				if( dx > dz )
+				{
+					var midx = Math.round(random( x1+1, x2-1 ));
+					var midz = Math.round(random( z1+1, z2 ));
+					
+					wall( midx,z1, midx,midz-1, height );
+					wall( midx,midz, midx,z2, height );
+
+					maze( x1,z1, midx,z2, height );
+					maze( midx,z1, x2,z2, height );
+				}
+				else
+				{
+					var midx = Math.round(random( x1+1, x2 ));
+					var midz = Math.round(random( z1+1, z2-1 ));
+
+					wall( x1,midz, midx-1,midz, height );
+					wall( midx,midz, x2,midz, height );
+
+					maze( x1,z1, x2,midz, height );
+					maze( x1,midz, x2,z2, height );
+				}
+			}
+			
+			wall( -sx/2,sz/2, sx/2,sz/2, 1 );
+			wall( -sx/2,-sz/2, sx/2,-sz/2, 1 );
+
+			midz = Math.round(random( -sz/2, sz/2-1 ));
+			wall( -sx/2,-sz/2, -sx/2,midz, 1 );
+			wall( -sx/2,midz+1, -sx/2,sz/2, 1 );
+
+			midz = Math.round(random( -sz/2, sz/2-1 ));
+			wall( sx/2,-sz/2, sx/2,midz, 1 );
+			wall( sx/2,midz+1, sx/2,sz/2, 1 );
+			
+			maze( -sx/2, -sz/2, sx/2, sz/2, 1/3 );
+		</script>
+	</body>
+
+</html>

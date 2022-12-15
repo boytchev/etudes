@@ -1,6 +1,11 @@
 This is a repository for the source code of various 3D programlets.
 
 
+### 28. [Maze generator [Suica.js]](suica/maze-generator.html?size=50x30)
+<a href="suica/maze-generator.html"><img src="snapshots/maze-generator.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> One of the simplest algorithms for maze generation is to split a room by a wall and add one door in this wall. This is repeated recursively with both halves. The algorithm guarantees a single path between any two points.
+<div style="clear:both;"></div>
+
+
 ### 27. [Voronoiless [Three.js]](threejs/voronoiless.html)
 <a href="threejs/voronoiless.html"><img src="snapshots/voronoiless.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Voronoi diagrams [[more info](https://en.wikipedia.org/wiki/Voronoi_diagram)] partitions the plane into regions based on a set of points. This etude demonstrates how to construct a Voronoi diagram based on an image without any special algorithm.
 <div style="clear:both;"></div>
