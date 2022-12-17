@@ -12,24 +12,63 @@
 		</suica>
 		
 		<script>
-			lookAt( [0,100,0], [0,0,0], [0,0,1] );
-			
-			var sx = 32, sz = 20;
+		
+			var sx = 32, // x-size of the maze
+				sz = 20, // z-size of the maze
+				sr = 1;	 // size of rooms
 			
 			var size = new URLSearchParams( window.location.search ).get( 'size' );
 			if( size )
 			{
 				size = size.split( 'x' );
-				sx = parseInt(size[0]) || 32;
-				sz = parseInt(size[1]) || 20;
+				sx = parseInt(size[0]) || 16;
+				sz = parseInt(size[1]) || 10;
+				sr = parseInt(size[2]) || 1;
 			}
 			
-			var dist = Math.max( sx, sz )**0.5 * 7;
-			orbit( dist, dist, 0.2 );
+			sx *= 2;
+			sz *= 2;
+			
+			var dist = Math.max( sx, sz )**0.5 * 6;
+
+			// add shadows (current version of Suica has no shadows,
+			// so add them manually via Three.js interface
+			suica0.light.intensity = -0.3;
+			suica0.renderer.shadowMap.enabled = true;
+			suica0.renderer.shadowMap.type = THREE.VSMShadowMap;
+
+			var light = new THREE.DirectionalLight( 'white', 1 );
+				light.position.set( 20, 40, 30 );
+				light.target = suica0.scene;
+				light.castShadow = true;
+
+				light.shadow.mapSize.width = 1024;
+				light.shadow.mapSize.height = 1024;
+				light.shadow.camera.left = -dist;
+				light.shadow.camera.right = dist;
+				light.shadow.camera.bottom = -dist;
+				light.shadow.camera.top = dist;
+				light.shadow.camera.near = 10;
+				light.shadow.camera.far = 102;
+				light.shadow.bias = 0.00001;
+				light.shadow.radius = 5;
+
+			suica0.scene.add( light );
+		
+			
+			orbit( dist/3, dist/5, 0.2 );
 			
 			var w = 0.4;
+
+
+			// floor
 			
-			cube( [0,-1.5,0], [sx+2*w,1,sz+2*w], 'gray' );
+			cube( [0,-1.5,0], [sx+2*w,1,sz+2*w], 'lightgray' );
+				its.threejs.receiveShadow = true;
+				its.threejs.castShadow = true;
+			
+			
+			// function to draw a decorated wall
 			
 			function wall( x1,z1, x2,z2, height )
 			{
@@ -42,33 +81,45 @@
 					
 				if( dx+dz==0 ) return;
 
+				// the wall
 				cube( [x,-1+height/2,z], [dx+w,height,dz+w], 'white' );
+					its.threejs.castShadow = true;
+					its.threejs.receiveShadow = true;
+				// the reddish overline
 				cube( [x,-1+height/2+0.01,z], [dx+ww,height,dz+ww], 'tomato' );
+					its.threejs.castShadow = true;
+					its.threejs.receiveShadow = true;
+				// the black underline
 				cube( [x,-1,z], [dx+1.2*w,0.01,dz+1.2*w], 'black' );
+					its.threejs.castShadow = true;
+					its.threejs.receiveShadow = true;
 			}
+
+
+			// generate a maze from (x1,z1) to (x2,z2)
 			
 			function maze( x1,z1, x2,z2, height )
 			{
 				var dx = x2-x1,
 					dz = z2-z1;
 					
-				if( Math.min(dx,dz) < 2 ) return;
+				if( Math.min(dx,dz) < sr+0.5 ) return;
 
 				if( dx > dz )
 				{
-					var midx = Math.round(random( x1+1, x2-1 ));
-					var midz = Math.round(random( z1+1, z2 ));
+					var midx = Math.round(random( x1+sr, x2-sr ));
+					var midz = Math.round(random( z1+sr, z2-sr+1 ));
 					
 					wall( midx,z1, midx,midz-1, height );
 					wall( midx,midz, midx,z2, height );
-
+					
 					maze( x1,z1, midx,z2, height );
 					maze( midx,z1, x2,z2, height );
 				}
 				else
 				{
-					var midx = Math.round(random( x1+1, x2 ));
-					var midz = Math.round(random( z1+1, z2-1 ));
+					var midx = Math.round(random( x1+sr, x2-sr+1 ));
+					var midz = Math.round(random( z1+sr, z2-sr ));
 
 					wall( x1,midz, midx-1,midz, height );
 					wall( midx,midz, x2,midz, height );
@@ -78,9 +129,12 @@
 				}
 			}
 			
+			
+			// build main z-walls
 			wall( -sx/2,sz/2, sx/2,sz/2, 1 );
 			wall( -sx/2,-sz/2, sx/2,-sz/2, 1 );
 
+			// build main x-walls with entry/exit doors
 			midz = Math.round(random( -sz/2, sz/2-1 ));
 			wall( -sx/2,-sz/2, -sx/2,midz, 1 );
 			wall( -sx/2,midz+1, -sx/2,sz/2, 1 );
@@ -89,6 +143,7 @@
 			wall( sx/2,-sz/2, sx/2,midz, 1 );
 			wall( sx/2,midz+1, sx/2,sz/2, 1 );
 			
+			// generate the maze
 			maze( -sx/2, -sz/2, sx/2, sz/2, 1/3 );
 		</script>
 	</body>
