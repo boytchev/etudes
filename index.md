@@ -1,8 +1,8 @@
 This is a repository for the source code of various 3D programlets.
 
 
-### 28. [Maze generator [Suica.js]](suica/maze-generator.html?size=50x30)
-<a href="suica/maze-generator.html"><img src="snapshots/maze-generator.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> One of the simplest algorithms for maze generation is to split a room by a wall and add one door in this wall. This is repeated recursively with both halves. The algorithm guarantees a single path between any two points.
+### 28. [Maze generator [Suica.js]](suica/maze-generator.html?size=20x15)
+<a href="suica/maze-generator.html"><img src="snapshots/maze-generator.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> One of the simplest algorithms for maze generation is to split a room by a wall and add one door in this wall. This is repeated recursively with both halves. The algorithm guarantees a single path between any two points. Try: [micro](suica/maze-generator.html?size=2x2), [small](suica/maze-generator.html?size=4x4), [normal](suica/maze-generator.html?size=12x8), [big](suica/maze-generator.html?size=24x12), [big+rooms](suica/maze-generator.html?size=30x20x3)
 <div style="clear:both;"></div>
 
 
