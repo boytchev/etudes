@@ -4,6 +4,7 @@
 	<head>
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<script src="three147.min.js"></script>
+		<script src="dat.gui.min.js"></script>
 		<link rel="stylesheet" href="../etudes.css">
 	</head>
 	
@@ -39,6 +40,18 @@
 				light.target.position.set( 0, 0, 30);
 				scene.add( light );
 				scene.add( light.target );
+
+
+			var gui = new dat.GUI();
+				gui.domElement.style = 'position: fixed; margin-right:0; z-index:2; top: 4em;';
+				var options = {
+					size: 1,
+					exposure: 5,
+				};
+				gui.add( options, 'size', 0.5, 2 ).name('Size').step(0.01);
+				gui.add( options, 'exposure', 1, 10 ).name('Exposure').step(0.01);
+				gui.open();
+
 				
 			<!-- var ambLight = new THREE.AmbientLight( 'royalblue', 0.3 ); -->
 				<!-- scene.add( ambLight ); -->
@@ -127,11 +140,10 @@ frameGeo = new THREE.EdgesGeometry( cubeGeo );
 			scene.add( frames );
 			
 			var lenses = 				new THREE.Mesh(
-				new THREE.SphereGeometry( 10,  ),
-				new THREE.MeshPhysicalMaterial( {color:new THREE.Color(0,5,0),transparent:true, opacity:1, transmission:1, ior:15, thickness:5, roughness:0, metalness:0  } )
+				new THREE.SphereGeometry( 10, 64, 32 ),
+				new THREE.MeshPhysicalMaterial( {color:new THREE.Color(0,5,0),transparent:true, opacity:1, transmission:1, ior:15, thickness:5, roughness:0, metalness:0, emissive:'green', emissiveIntensity: 0.5  } )
 			)
-			lenses.scale.set( 1, 1, 0.1 );
-			lenses.scale.set( 1, 1, 0.1 );
+			lenses.scale.set( 1, 1, 0.2 );
 
 			<!-- var bar = 				new THREE.Mesh( -->
 				<!-- new THREE.RingGeometry( 5, 100, 64, 1 ), -->
@@ -142,7 +154,7 @@ frameGeo = new THREE.EdgesGeometry( cubeGeo );
 			var magicGlasses = new THREE.Group();
 			
 			var tor = new THREE.Mesh(
-					new THREE.TorusGeometry( 10, 0.5, 12, 64 ),
+					new THREE.TorusGeometry( 10, 0.5, 12, 100 ),
 					new THREE.MeshStandardMaterial( {color: new THREE.Color(9,7,5), metalness: 0.9, roughness: 0, transparent:true, opacity:1} ),
 				);
 			
@@ -194,6 +206,10 @@ scene.add( balls );
 			{
 				var dTime = clock.getDelta();
 				
+				
+				lenses.material.color.g = options.exposure**1.2;
+				lenses.material.emissiveIntensity = options.exposure/20;
+				
 				houses.rotation.y = t/10000;
 				balls.rotation.y = t/10000;
 				frames.rotation.y = t/10000;
@@ -204,6 +220,7 @@ scene.add( balls );
 			//	magicGlasses.position.y = 20+15*Math.cos( 0.001*t );
 				
 				magicGlasses.position.z = 70;
+				magicGlasses.scale.setScalar( options.size );
 				
 				for( var ball of balls.children )
 				{
