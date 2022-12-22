@@ -1,0 +1,266 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="three147.min.js"></script>
+		<script src="dat.gui.min.js"></script>
+		<link rel="stylesheet" href="../etudes.css">
+	</head>
+	
+	<body>
+		<h1 class="white">X-Ray glass<a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+
+		<script>
+
+			// construct and setup the scene
+			
+			var renderer = new THREE.WebGLRenderer( {antialias:true} );
+				renderer.setAnimationLoop( animate );
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+
+			var scene = new THREE.Scene();
+				scene.background = new THREE.Color( 'black' );
+
+			var camera = new THREE.PerspectiveCamera( 60, 1, 1, 10000 );
+				camera.position.set( 0, 15, 100 );
+				camera.lookAt( new THREE.Vector3(0, -10, 0) );
+
+			var light = new THREE.SpotLight( 'white', 2 );
+				light.position.set( 0, 50, 80 );
+				light.angle = 1.2;
+				light.penumbra = 1;
+				light.distance = 150;
+				light.target = new THREE.Object3D();
+				light.target.position.set( 0, 0, 30);
+				scene.add( light );
+				scene.add( light.target );
+
+
+			// interactive panel
+			
+			var gui = new dat.GUI();
+				gui.domElement.style = 'position: fixed; margin-right:0; z-index:2; top: 4em;';
+				var options = {
+					size: 1,
+					exposure: 5,
+				};
+				gui.add( options, 'size', 0.5, 2 ).name('Size').step(0.01);
+				gui.add( options, 'exposure', 1, 10 ).name('Exposure').step(0.01);
+				gui.open();
+
+
+			// process window resizes
+				
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+			
+			function onWindowResize( event )
+			{
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight, true );
+			}			
+
+	
+			// create scene objects
+			
+			var allTunnels = createTunnels( ),
+				allXRays = createXRays( ),
+				allBubbles = createBubbles( ),
+				xrayGlass = createXRayGlass( );
+			
+					
+			
+			function animate( t )
+			{
+				t /= 10000;
+				
+				allTunnels.rotation.y = t;
+				allXRays.rotation.y = t;
+				allBubbles.rotation.y = t;
+
+				xrayGlass.position.x = 13*Math.sin( 10*t );
+				xrayGlass.rotation.set( -0.4-0.6*Math.cos( 7*t ),0.3*Math.cos(10*t),0);
+				xrayGlass.scale.setScalar( options.size );
+				xrayGlass.lenses.material.color.g = options.exposure**1.2;
+				xrayGlass.lenses.material.emissiveIntensity = options.exposure/20;
+				
+				
+				// moving bubbles
+				for( var bubble of allBubbles.children )
+				{
+					// so proud that I found how to use Math.tan() to
+					// simulate how bubble slow down near the opening
+					bubble.position.y = 6 + 5*Math.tan( bubble.angle + 3*t + bubble.offset );
+					// recalculate bubble size
+					bubble.scale.setScalar( 1+Math.abs(bubble.position.y-6)/15 );
+				}
+				
+				// finally
+				renderer.render( scene, camera );
+			}
+			
+			
+			
+			function createBubbles( )
+			{
+				var geometry = new THREE.IcosahedronGeometry( 1, 3 ),
+					material = new THREE.MeshPhysicalMaterial( {
+						color: 'gold',
+						metalness: 0,
+						roughness: 1,
+					} );
+
+				var all = new THREE.Group( );
+				scene.add( all );
+
+
+				for( var tunnel of allTunnels.children )
+				{
+					var bubble,
+						offset = 2*Math.PI * Math.random();
+					
+					for( var j=0; j<10; j++ )
+					{
+						bubble = new THREE.Mesh( geometry, material );
+						bubble.position.copy( tunnel.position );
+						bubble.angle = 2*Math.PI * (j/10);
+						bubble.offset = offset;
+
+						all.add( bubble );
+					}
+				}
+			
+				return all;
+			}
+
+
+
+			function createXRays( )
+			{
+				var geometry = new THREE.EdgesGeometry( allTunnels.children[0].geometry ),
+					material = new THREE.LineBasicMaterial( {color: 0x505050} );
+					
+				var all = new THREE.Group( );
+				scene.add( all );
+
+				for( var tunnel of allTunnels.children )
+				{
+					var xray = new THREE.LineSegments( geometry, material );
+						xray.position.copy( tunnel.position );
+						
+					all.add( xray );
+				}
+				
+				return all;
+			}
+			
+
+
+			function createTunnels( )
+			{
+				var geometry = new THREE.CylinderGeometry( 3, 3, 6, 14, 14, true);
+				{
+					var pos = geometry.getAttribute( 'position' );
+					for( var i=0; i<pos.count; i++ )
+					{
+						// get vertex coordinates
+						var x = pos.getX(i),
+							y = pos.getY(i),
+							z = pos.getZ(i);
+							
+						// create hyperbolic shape
+						var k = 1.2/(0.01+y+3);
+						x *= k;
+						z *= k;
+
+						// add pseudorandom deformations
+						var dx = Math.sin(10*x-z*z)/10 + Math.cos(10*x+z*z)/15,
+							dz = Math.sin(x*x-10*z)/10 + Math.cos(x*x+10*z)/15;	
+						x += dx;
+						z += dz;
+						
+						pos.setXYZ( i, 2*x, 2*y, 2*z );
+					}
+					
+					geometry.computeVertexNormals();
+				}
+			
+				var material = new THREE.MeshPhysicalMaterial( {
+					color: 'white',
+					transparent: true,	// important
+					opacity: 1,
+					side: THREE.DoubleSide,
+					polygonOffset: true,
+					polygonOffsetUnits: 0,
+					polygonOffsetFactor: -1,
+					metalness: 0,
+					roughness: 1,
+					sheen: 0.3,
+					sheenColor: 'crimson',
+					sheenRoughness: 0.5,
+				} );
+			
+				var all = new THREE.Group( );
+				scene.add( all );
+
+				for( var i=0; i<16; i++ )
+				{
+					var tunnel = new THREE.Mesh( geometry, material );
+						tunnel.position.x = 40 * (i%4) - 70;
+						tunnel.position.z = 40 * (i>>2) - 70;
+						
+					all.add( tunnel );
+				}
+				
+				return all;
+			}
+
+
+
+			function createXRayGlass( )
+			{
+				var lenses = new THREE.Mesh(
+					new THREE.SphereGeometry( 10, 64, 32 ),
+					new THREE.MeshPhysicalMaterial( {
+						color: new THREE.Color( 0, 5, 0 ),
+						transparent: true,
+						opacity: 1,
+						transmission: 1,
+						ior: 15,
+						thickness: 5,
+						roughness: 0,
+						metalness: 0,
+						emissive: 'Green',
+						emissiveIntensity: 0.5
+					} )
+				)
+				lenses.scale.set( 1, 1, 0.2 );
+
+				var frame = new THREE.Mesh(
+					new THREE.TorusGeometry( 10, 0.5, 12, 100 ),
+					new THREE.MeshStandardMaterial( {
+						color: new THREE.Color( 9, 7, 5 ), // yeah, I know
+						metalness: 0.9,
+						roughness: 0,
+						transparent: true,
+						opacity: 1
+					} ),
+				);
+				
+				var all = new THREE.Group();
+					all.position.set( 0, 10, 70 );
+					all.lenses = lenses;
+					all.add( lenses, frame );
+
+				scene.add( all );
+			
+				return all;
+			}
+		</script>
+	</body>
+</html>
