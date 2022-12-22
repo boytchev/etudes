@@ -1,0 +1,81 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<script src="three147.min.js"></script>
+		<script src="dat.gui.min.js"></script>
+	</head>
+	
+	<body>
+		<script>
+
+			var renderer = new THREE.WebGLRenderer( {antialias:true} );
+				renderer.setSize( window.innerWidth, window.innerHeight, true );
+				renderer.setAnimationLoop( animate );
+				document.body.appendChild( renderer.domElement );
+				document.body.style = 'margin: 0; overflow: hidden';
+
+			var scene = new THREE.Scene();
+
+			var camera = new THREE.PerspectiveCamera( 60, 1, 1, 1000 );
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.position.set( 0, 25, 100 );
+				camera.lookAt( new THREE.Vector3(0, -10, 0) );
+				camera.updateProjectionMatrix();
+
+			var gui = new dat.GUI();
+				gui.add( {renderOrder: 10}, 'renderOrder', 0, 20 )
+					.step(2)
+					.onChange( x => xRay.renderOrder = x );
+
+
+			// creating transparent objects with different renderOrders
+			// their opacity=1, i.e. they look like non-transparent
+			for( var i=0; i<10; i++ )
+			{			
+				var plane = new THREE.Mesh(
+						new THREE.PlaneGeometry( 100, 20 ),
+						new THREE.MeshBasicMaterial( {
+							color: new THREE.Color().setHSL(i/3.5,1,0.5),
+							transparent: true, // <---- this is important
+							opacity: 1
+						} )
+					);
+					plane.position.z = -60+11*i;
+					plane.renderOrder = 1+2*i; // <---- also important
+				scene.add( plane );
+			}
+						
+			
+			// creating "xray" glass, completely transparent (opacity=0)
+			var xRay = new THREE.Mesh(
+					new THREE.CircleGeometry( 20, 64 ),
+					new THREE.MeshBasicMaterial( {
+						transparent: true, // <---- important, as well
+						opacity: 0
+					} )
+				);
+				xRay.position.set( 0, 5, 40 );
+				xRay.renderOrder = 10; // <---- change this to wow
+			scene.add( xRay );
+
+
+			// creating a frame around the "xray" glass,
+			// it makes it easier to perceive the glass
+			var xRayFrame = new THREE.Mesh(
+					new THREE.TorusGeometry( 20, 0.1, 12, 64 ),
+					new THREE.MeshBasicMaterial( )
+				);
+				xRayFrame.position.set( 0, 5, 40 );
+			scene.add( xRayFrame );
+			
+			
+			function animate( )
+			{
+				renderer.render( scene, camera );
+			}
+
+
+		</script>
+	</body>
+</html>
