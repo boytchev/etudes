@@ -31,6 +31,7 @@
 
 			// creating transparent objects with different renderOrders
 			// their opacity=1, i.e. they look like non-transparent
+			
 			for( var i=0; i<10; i++ )
 			{			
 				var plane = new THREE.Mesh(
@@ -48,6 +49,7 @@
 						
 			
 			// creating "xray" glass, completely transparent (opacity=0)
+			
 			var xRay = new THREE.Mesh(
 					new THREE.CircleGeometry( 20, 64 ),
 					new THREE.MeshBasicMaterial( {
@@ -62,6 +64,7 @@
 
 			// creating a frame around the "xray" glass,
 			// it makes it easier to perceive the glass
+			
 			var xRayFrame = new THREE.Mesh(
 					new THREE.TorusGeometry( 20, 0.1, 12, 64 ),
 					new THREE.MeshBasicMaterial( )
