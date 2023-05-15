@@ -1,0 +1,377 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="three147.min.js"></script>
+		<link rel="stylesheet" href="../etudes.css">
+		
+		<style>
+			.lil-gui { 
+				--width: 10em;
+				--name-width: 100%;
+				--font-size: 100%;
+				--widget-height: 2em;
+				position: fixed;
+				z-index:2;
+				top: 4em !important;
+			}
+			.lil-gui button {
+				text-align: left;
+				padding-left: 1em;
+			}
+		</style>
+		<script src="lil-gui.umd.js"></script>
+	</head>
+	
+	<body>
+		<h1 class="white">Fluid effects<span id="caption"></span><a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+
+		<script>
+		
+			// if you are here only to learn how the fluid effects are created,
+			// go to the bottom of the file - there is a function for each effect
+			
+			
+			// construct and setup the scene
+			
+			var renderer = new THREE.WebGLRenderer( {antialias:true} );
+				renderer.shadowMap.enabled = true;
+
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+
+			var scene = new THREE.Scene();
+
+			var camera = new THREE.PerspectiveCamera( 60, 1, 10, 1000 );
+				camera.position.set( 0, 0, 100 );
+				camera.lookAt( new THREE.Vector3(0, 0, 0) );
+
+			var light = new THREE.SpotLight( 'white', 0.4 );
+				light.castShadow = true;
+				light.penumbra = 1;
+				light.angle = 0.8;
+				light.position.set( -10, -10, 100 );
+				light.target = scene;
+				
+				light.shadow.camera.near = 10;
+				light.shadow.camera.far = 1100;
+				light.shadow.radius = 3;
+				
+			var sublight = new THREE.SpotLight( 'white', 0.6 );
+				sublight.penumbra = 1;
+				sublight.angle = 0.8;
+				sublight.position.set( 60, 120, 300 );
+				sublight.target = scene;
+				
+				scene.add( light, sublight );
+
+
+			// interactive panel for selecting fluid effects
+			
+			var fluidEffect = NoEffect; // initial fluid effect
+			
+			var caption = document.getElementById( 'caption' );
+			var gui = new lil.GUI({title:'Select effect'});
+				var options = {
+					NoEffect: 		function(){ fluidEffect = NoEffect,			caption.innerHTML = ' – No effect'},
+					DiagonalWaves: 	function(){ fluidEffect = DiagonalWaves,	caption.innerHTML = ' – Diagonal waves'},
+					CircularWaves: 	function(){ fluidEffect = CircularWaves,	caption.innerHTML = ' – Circular waves'},
+					SquareWaves: 	function(){ fluidEffect = SquareWaves,		caption.innerHTML = ' – Square waves'},
+					WindowWipe: 	function(){ fluidEffect = WindowWipe,		caption.innerHTML = ' – Window wipe'},
+					Wiggle:			function(){ fluidEffect = Wiggle,			caption.innerHTML = ' – Wiggle'},
+					PageTurn: 		function(){ fluidEffect = PageTurn,    		caption.innerHTML = ' – Page turn'},
+					GlassBricks: 	function(){ fluidEffect = GlassBricks, 		caption.innerHTML = ' – Glass bricks'},
+					CentralShiver:	function(){ fluidEffect = CentralShiver,	caption.innerHTML = ' – Central shiver'},
+					PeripherialShiver: function(){ fluidEffect = PeripherialShiver, caption.innerHTML = ' – Peripheral shiver'},
+					ClockTimer: 	function(){ fluidEffect = ClockTimer,       caption.innerHTML = ' – Clock timer'},
+					Drops: 			function(){ fluidEffect = Drops,			caption.innerHTML = ' – Drops'},
+					RainDrops:		function(){ fluidEffect = RainDrops, 		caption.innerHTML = ' – Rain drops'},
+					Tachycardia: 	function(){ fluidEffect = Tachycardia,		caption.innerHTML = ' – Tachycardia'},
+					BlackHolePortal: function(){ fluidEffect = BlackHolePortal,	caption.innerHTML = ' – Black hole portal'},
+					RollingBlinds:	function(){ fluidEffect = RollingBlinds,		caption.innerHTML = ' – Rolling blinds'},
+				};
+				gui.add( options, 'NoEffect' ).name( 'No effect' );
+				gui.add( options, 'DiagonalWaves' ).name( 'Diagonal waves' );
+				gui.add( options, 'CircularWaves' ).name( 'Circular waves' );
+				gui.add( options, 'SquareWaves' ).name( 'Square waves' );
+				gui.add( options, 'WindowWipe' ).name( 'Window wipe' );
+				gui.add( options, 'Wiggle' ).name( 'Wiggle' );
+				gui.add( options, 'PageTurn' ).name( 'Page turn' );
+				gui.add( options, 'GlassBricks' ).name( 'Glass bricks' );
+				gui.add( options, 'CentralShiver' ).name( 'Central shiver' );
+				gui.add( options, 'PeripherialShiver' ).name( 'Peripherial shiver' );
+				gui.add( options, 'ClockTimer' ).name( 'Clock timer' );
+				gui.add( options, 'Drops' ).name( 'Drops' );
+				gui.add( options, 'RainDrops' ).name( 'Rain drops' );
+				gui.add( options, 'Tachycardia' ).name( 'Tachycardia' );
+				gui.add( options, 'BlackHolePortal' ).name( 'Black hole portal' );
+				gui.add( options, 'RollingBlinds' ).name( 'Rolling blinds' );
+				gui.open();
+
+
+			// process window resizes
+				
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+			
+			function onWindowResize( event )
+			{
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight, true );
+			}			
+
+	
+			// background wall of squares
+
+			var wallMap = new THREE.TextureLoader().load( "fluid-effects/wall.jpg" );
+				wallMap.wrapS = THREE.RepeatWrapping;
+				wallMap.wrapT = THREE.RepeatWrapping;
+				wallMap.repeat.set( 10, 6 );
+
+			var wall = new THREE.Mesh(
+					new THREE.PlaneGeometry( 1000, 600 ),
+					new THREE.MeshStandardMaterial( {color: 'CadetBlue', map: wallMap} )
+				);	
+				wall.position.z = -600;
+				wall.receiveShadow = true;
+				scene.add( wall );
+
+
+			// main object in the scene
+			
+			var ball = new THREE.Mesh(
+					new THREE.IcosahedronGeometry( 70, 1 ),
+					new THREE.MeshStandardMaterial( {
+						color: 'Gray',
+						metalness: 1,
+						roughness: 0.5,
+						flatShading: true,
+					} )
+				);	
+				ball.castShadow = true;
+				ball.position.z = -200;
+				scene.add( ball );
+				
+			var ballDecor = new THREE.Mesh(
+					new THREE.IcosahedronGeometry( 68, 2 ),
+					new THREE.MeshStandardMaterial( {
+						color: 'Orange',
+						metalness: 0,
+						roughness: 0.2,
+						flatShading: true,
+						emissive: 'Orange',
+						emissiveIntensity: 0.2,
+					} )
+				);	
+				ball.add( ballDecor );
+				
+
+
+			// a flock of small satellites flying around the main ball
+			
+			var satGeo = new THREE.DodecahedronGeometry( 5.2, 1 ),
+				satMat = new THREE.MeshLambertMaterial( {color: 'white'} ),
+				satDecorGeo = new THREE.DodecahedronGeometry( 5.45 ),
+				satDecorMat = new THREE.MeshLambertMaterial( {color: 'black'} );
+				
+			for( var i=0; i<40; i++ )
+			{
+				var sat = new THREE.Mesh( satGeo, satMat );
+					sat.add( new THREE.Mesh( satDecorGeo, satDecorMat ) );
+					sat.castShadow = true;
+					
+				ballDecor.add( sat ); 
+			}
+
+			
+			// create a refractive glass surface - any wrinkles
+			// in this surface cause the various fluids effects
+			
+			var M = 90, // number of horizontal vertices
+				N = 60; // number of vertical vertices
+			var glass = new THREE.Mesh(
+					new THREE.PlaneGeometry( 300, 200, M, N ),
+					new THREE.MeshPhysicalMaterial( {
+						transmission: 1,
+						roughness: 0,
+						thickness: 30,
+						specularIntensity: 0,
+					} )
+				);	
+				scene.add( glass );
+
+
+			// helper variables for glass geometry and vertices
+		
+			var geo = glass.geometry,
+				pos = geo.getAttribute( 'position' );
+			
+
+			// animation loop function
+			
+			function animate( t )
+			{
+				// rotate the big ball
+				ball.rotation.set( t/1700, t/1800, t/1900 );
+
+				// orbit the small satellite balls
+				for( var i in ballDecor.children )
+				{
+					// set values for spherical coordinates that look chaotic
+					var time = t + 50*i,
+						dist = 90 + 10*Math.sin(i*i-i+time/1000),
+						phi = i**3 + time/1200,
+						theta = i*i - time/1300;
+						
+					ballDecor.children[i].position.setFromSphericalCoords( dist, phi, theta ); 
+				}
+
+				// update the glass surface with the current fluid effect function
+				for( var i=0; i<pos.count; i++ )
+				{
+					var x = pos.getX( i ),
+						y = pos.getY( i ),
+						z = fluidEffect( x, y, t );
+
+					pos.setZ( i, z );
+				}
+				pos.needsUpdate = true;
+				geo.computeVertexNormals( );
+
+				// we are done, render
+				renderer.render( scene, camera );
+			}
+
+			renderer.setAnimationLoop( animate );
+
+
+
+			// functions for fluid effects - z(x,y,t)
+			// each function uses coordinates (X,Y) and time T
+			// calculates and returns the Z coordinate
+			
+			
+			function NoEffect( x, y, t )
+			{
+				return 0;
+			}
+						
+			
+			function DiagonalWaves( x, y, t )
+			{
+				return 2*Math.sin( 0.1*x + 0.1*y - t/150 );
+			}
+			
+			
+			function CircularWaves( x, y, t )
+			{
+				var d = Math.sqrt( x**2 + y**2 );
+				return 2*Math.sin( d/10+t/100);
+			}
+
+			
+			function SquareWaves( x, y, t )
+			{
+				return Math.sin( 0.3*Math.max( Math.abs(x+y/10), Math.abs(y+x/10) ) + t/100 );
+			}
+
+
+			function WindowWipe( x, y, t )
+			{
+				return 0.2*x*Math.sin( t/100 ) + 0.2*y*Math.cos( t/100 );
+			}
+
+			
+			function Wiggle( x, y, t )
+			{
+				return 5*(
+					Math.exp(Math.sin(x/26-t/430)) * Math.exp(Math.cos(y/23-t/590))
+					+
+					Math.exp(Math.cos(x/25+t/480)) * Math.exp(Math.sin(y/21+t/510))
+					+
+					Math.exp(Math.cos(x/22+t/550)) * Math.exp(Math.cos(y/27+t/410))
+					);
+			}
+
+
+			function PageTurn( x, y, t )
+			{
+				return (
+					2*Math.exp(x/4-y/4) * Math.sin(t/1000)**100
+					+
+					2*Math.exp(-x/4+y/4) * Math.cos(t/1000)**100
+				);
+			}
+			
+			
+			function GlassBricks( x, y, t )
+			{
+				var k = 40 + 20*Math.sin(t/1000);
+				return ((Math.round(x/k) + Math.round(y/k)) % 2) ? 5 : -5;
+			}
+			
+
+			function CentralShiver( x, y, t )
+			{
+				var d = (x**2 + y**2) / 5000;
+				return Math.min( 0.1*Math.random()/(0.0001+d), 5 );
+			}
+
+
+			function PeripherialShiver( x, y, t )
+			{
+				var d = (x**2 + 4*y**2) / 5000;
+				return d*(Math.cos( x+t/10 )**2 + Math.cos( y+t/10 )**2);
+			}
+
+
+			function ClockTimer( x, y, t )
+			{
+				var a = (Math.atan2(y,x)/Math.PI + 1) / 2;
+				return 2 * ((a+t/1000) % 1);
+			}
+			
+			
+			function Drops( x, y, t )
+			{
+				
+				var d = Math.sqrt( x**2 + y**2 );
+				t = THREE.MathUtils.clamp( (-(t%1500)/20+d/2)%30-10, -Math.PI, Math.PI );
+				return 2*Math.cos( t );
+			}
+
+
+			function RainDrops( x, y, t )
+			{
+				var d = Math.sqrt( x**2 + y**2 );
+				return 0.01 * Math.tan( d+2*t/10000 );
+			}
+			
+
+			function Tachycardia( x, y, t )
+			{
+				var d = Math.sqrt( x**2 + y**2 );
+				return d*Math.sin( t/50 )*Math.cos( t/150 );
+			}
+			
+			
+			function BlackHolePortal( x, y, t )
+			{
+				var d = Math.sqrt( x**2 + y**2 );
+				return 500/(0.1+d)+ 20*(1.5+0.5*Math.sin( d/100-(t/1000)));
+			}
+			
+			
+			function RollingBlinds( x, y, t )
+			{
+				var d = Math.sqrt( x**2 + y**2 );
+				return 1/(Math.sin(t/1000)+Math.abs(x/100)) + 1/(-Math.sin(t/1000)+Math.abs(y/100));
+			}
+						
+		</script>
+	</body>
+</html>

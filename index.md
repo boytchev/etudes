@@ -1,6 +1,11 @@
 This is a repository for the source code of various 3D programlets.
 
 
+### 30. [Fluid effects [Threejs.js]](threejs/fluid-effects.html)
+<a href="threejs/fluid-effects.html"><img src="snapshots/fluid-effects.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Shaders are the common way to add posteffects to 3D scenes. However, in Three.js a thin transmissive layer above the scene could  mimic some effects without custom shaders and without using EffectComposer. This etude shows 16 formula-driven fluid effects.
+<div style="clear:both;"></div>
+
+
 ### 29. [XRay glass [Threejs.js]](threejs/xray-glass.html)
 <a href="threejs/xray-glass.html"><img src="snapshots/xray-glass.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Achieving transparency with blending operations relies on render order and it might be a problem. However, transparency with finely tuned render order can be used to filter out objects without stencil buffers or multiple render passes.
 <div style="clear:both;"></div>
