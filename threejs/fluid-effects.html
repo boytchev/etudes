@@ -368,7 +368,6 @@
 			
 			function RollingBlinds( x, y, t )
 			{
-				var d = Math.sqrt( x**2 + y**2 );
 				return 1/(Math.sin(t/1000)+Math.abs(x/100)) + 1/(-Math.sin(t/1000)+Math.abs(y/100));
 			}
 						
