@@ -1,0 +1,350 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link rel="stylesheet" href="../etudes.css">
+		
+		<script async
+			src="https://ga.jspm.io/npm:es-module-shims@1.5.1/dist/es-module-shims.js"
+			crossorigin="anonymous">
+		</script>
+		
+		<script type="importmap">
+		  {
+			"imports": {
+			  "three": "https://unpkg.com/three@0.154.0/build/three.module.js",
+			  "three/addons/": "https://unpkg.com/three@0.154.0/examples/jsm/"
+			}
+		  }
+		</script>
+	</head>
+	
+	<body>
+		<h1 class="white">Bézier space<a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		<h3 class="white">Free-form defornamtion based on 3&times;3 cage</h3>
+		
+		<script type="module">
+			import * as THREE from 'three';
+			import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+			import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+			import * as lil from 'three/addons/libs/lil-gui.module.min.js';
+		
+			// construct and setup the scene
+			
+			var renderer = new THREE.WebGLRenderer( {antialias:true} );
+				renderer.outputColorSpace  = THREE.LinearSRGBColorSpace;
+				renderer.setAnimationLoop( animate );
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+
+			var scene = new THREE.Scene();
+				scene.background = new THREE.Color( 'black' );
+
+			var camera = new THREE.PerspectiveCamera( 40, 1, 1, 1000 );
+				camera.position.set( 0, 0, 5 );
+				camera.lookAt( scene.position );
+			
+			var light = new THREE.PointLight( 'white', 0.7 );
+				light.position.set( 0, 20, 100 );
+				scene.add( light );
+				
+			var controls = new OrbitControls( camera, renderer.domElement );
+				controls.maxDistance = 30;
+				controls.minDistance = 1;
+				controls.enableDamping = true;
+
+
+
+			// maintain full screen
+			
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+			
+			function onWindowResize( event )
+			{
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight, true );
+			}			
+
+
+
+			// transparent cube, used to visualize the Bezier space
+			
+			var space = new THREE.Mesh(
+					new THREE.BoxGeometry( 2, 2, 2, 8, 8, 8 ),
+					new THREE.MeshNormalMaterial( {
+							color: 'white',
+							transparent: true,
+							opacity: 0.5,
+							side: THREE.DoubleSide,
+						} )
+				);
+				space.visible = false;
+				scene.add( space );
+
+			
+			
+			// load Lee Perry Smith model
+			
+			var head;
+			new GLTFLoader().load( 'negative-morphs/LeePerrySmith.glb', ( gltf ) =>
+				{
+					head = gltf.scene.children[ 0 ];
+					head.geometry.scale( 0.3, 0.3, 0.3 );
+					head.material = new THREE.MeshPhysicalMaterial( {
+							color: new THREE.Color( 1.5, 1.5, 1.4 ),
+							map: new THREE.TextureLoader().load( 'negative-morphs/Map-COL.jpg' ),
+							normalMap: new THREE.TextureLoader().load( 'negative-morphs/Infinite-Level_02_Tangent_SmoothUV.jpg' ),
+							roughness: 0.5,
+						} );
+
+					scene.add( head );
+				}
+			);
+				
+			
+
+			// create a cage of spheres and segments
+			
+			// the cage is a group (to easily hide and show it)
+			var cage = new THREE.Group();
+				scene.add( cage );
+				
+			// images of control points
+			var points = [],
+				pointGeometry = new THREE.IcosahedronGeometry( 0.03, 10 ),
+				pointMaterial = new THREE.MeshPhongMaterial( {color:'gold', shininess:100} ),
+				pointMesh = new THREE.Mesh( pointGeometry, pointMaterial );
+				
+			for (var i=0; i<3; i++)
+			{
+				points[i] = [];
+				for (var j=0; j<3; j++)
+				{
+					points[i][j] = [];
+					for (var k=0; k<3; k++)
+					{
+						points[i][j][k] = pointMesh.clone();
+						points[i][j][k].position.set( i-1, j-1, k-1 );
+						cage.add( points[i][j][k] );
+					}
+				}
+			}
+
+			// images of control segments
+			var links = [];
+			for (var i=0; i<3; i++)
+			for (var j=0; j<3; j++)
+			for (var k=0; k<3; k++)
+			{
+				if( i<2 )
+				{
+					links.push( points[i][j][k].position );
+					links.push( points[i+1][j][k].position );
+				}
+				if( j<2 )
+				{
+					links.push( points[i][j][k].position );
+					links.push( points[i][j+1][k].position );
+				}
+				if( k<2 )
+				{
+					links.push( points[i][j][k].position );
+					links.push( points[i][j][k+1].position );
+				}
+			}
+			var segments = [],
+				segmentGeometry = new THREE.BufferGeometry( ).setFromPoints( links ),
+				segmentPos = segmentGeometry.getAttribute( 'position' ),
+				segmentMaterial = new THREE.LineBasicMaterial( {color:'gold'} ),
+				segmentMesh = new THREE.LineSegments( segmentGeometry, segmentMaterial );
+	
+			cage.add( segmentMesh );
+
+
+
+			// Bernstein polynomial for cubic Bezier space
+			// https://en.wikipedia.org/wiki/Bernstein_polynomial
+
+			function B( i, t )
+			{
+				switch (i)
+				{
+					case 0: return (1-t)*(1-t);
+					case 1: return 2*(1-t)*t;
+					case 2: return t*t;
+				}
+			}
+
+
+
+			// function that deforms the geometry of an object
+			// base on the deformation of the Bezier space
+			
+			var vec = new THREE.Vector3();
+			
+			function bezierGeometry( geometry )
+			{
+				var pos = geometry.getAttribute( 'position' ),
+					ori = geometry.getAttribute( 'originalPosition' );
+			
+				// make a copy of the original geometry
+				if( !ori )
+				{
+					geometry.setAttribute( 'originalPosition', pos.clone() );
+					ori = geometry.getAttribute( 'originalPosition' );
+				}
+
+				// transfrom the geometry
+				for( var n=0; n<pos.count; n++ )
+				{
+					var x = ori.getX( n ),
+						y = ori.getY( n ),
+						z = ori.getZ( n );
+						
+					var u = (x+1)/2,
+						v = (y+1)/2,
+						w = (z+1)/2;
+						
+					vec.set(0,0,0);
+					for (var i=0; i<3; i++)
+					for (var j=0; j<3; j++)
+					for (var k=0; k<3; k++)
+					{
+						vec.addScaledVector( points[i][j][k].position, B(i,u)*B(j,v)*B(k,w) );
+					}
+	
+					pos.setXYZ( n, vec.x, vec.y, vec.z );
+				}
+				
+				pos.needsUpdate = true;
+				geometry.computeVertexNormals( );
+			}
+			
+	
+	
+			// interactive panel for user control
+			
+			var data = {
+					axisX: true,
+					axisY: false,
+					axisZ: false,
+					freeform: false,
+					wireframe: false,
+					cage: true,
+					space: false,
+				};
+			var gui = new lil.GUI({title:'Contros'}),
+				guiG = gui.addFolder( 'Cage motion' );
+			var guiX = guiG.add( data, 'axisX' ).name( 'Nodding' ).onChange( noFreeForm ),
+				guiY = guiG.add( data, 'axisY' ).name( 'Turning' ).onChange( noFreeForm ),
+				guiZ = guiG.add( data, 'axisZ' ).name( 'Tilting' ).onChange( noFreeForm ),
+				guiF = guiG.add( data, 'freeform' ).name( 'Free form' ).onChange( freeForm );
+			var guiM = gui.addFolder( 'Features' );
+				guiM.add( data, 'wireframe' ).name( 'Show wireframe' ).onChange( ()=>head.material.wireframe = data.wireframe );
+				guiM.add( data, 'cage' ).name( 'Show cage' ).onChange( ()=>cage.visible = data.cage );
+				guiM.add( data, 'space' ).name( 'Show space' ).onChange( ()=>space.visible = data.space );
+
+			// switching on free form deformation
+			function freeForm( )
+			{
+				data.axisX = false;
+				data.axisY = false;
+				data.axisZ = false;
+				
+				guiX.updateDisplay( );
+				guiY.updateDisplay( );
+				guiZ.updateDisplay( );
+			}
+			
+			// switching off free form deformation
+			function noFreeForm( )
+			{
+				data.freeform = false;
+				
+				guiF.updateDisplay( );
+			}
+			
+			
+			
+			// rotation axes
+			
+			var axisX = new THREE.Vector3(1,0,0),
+				axisY = new THREE.Vector3(0,1,0),
+				axisZ = new THREE.Vector3(0,0,1);
+			
+			
+			
+			// animation loop
+
+			function animate( t )
+			{
+				t = t/1000;
+
+				// reset control points
+				for (var i=0; i<3; i++)
+				for (var j=0; j<3; j++)
+				for (var k=0; k<3; k++)
+				{
+					points[i][j][k].position.x = i-1;
+					points[i][j][k].position.y = j-1;
+					points[i][j][k].position.z = k-1;
+				}
+
+				if( data.freeform )
+				{
+					// free-form deformation
+					for (var i=0; i<3; i++)
+					for (var j=0; j<3; j++)
+					for (var k=0; k<3; k++)
+					{
+						points[i][j][k].position.x += 0.7*Math.sin(1.3*t+j+k);
+						points[i][j][k].position.y += 0.4*Math.sin(1.1*t+i+k);
+						points[i][j][k].position.z += 0.7*Math.cos(1.4*t+i+j);
+					}
+				}
+				else
+				{
+					// head nodding, turning and tilting
+					for (var i=0; i<3; i++)
+					for (var j=1; j<3; j++)
+					for (var k=0; k<3; k++)
+					{
+						if( data.axisX ) points[i][j][k].position.applyAxisAngle( axisX, 0.5*Math.sin(1.5*t) );
+						if( data.axisY ) points[i][j][k].position.applyAxisAngle( axisY, 0.5*Math.cos(2*t+1) );
+						if( data.axisZ ) points[i][j][k].position.applyAxisAngle( axisZ, 0.5*Math.sin(1.7*t+2) );
+					}
+				}
+
+				// update cage
+				if( data.cage )
+				{
+					for( var i=0; i<segmentPos.count; i++ )
+						segmentPos.setXYZ( i, links[i].x, links[i].y, links[i].z );
+						
+					segmentPos.needsUpdate = true;
+				}
+
+				// deform cage
+				if( space.visible )
+				{
+					bezierGeometry( space.geometry );
+				}
+
+				// deform head
+				if( head ) bezierGeometry( head.geometry );
+				
+				
+				controls.update( );
+				//light.position.copy( camera.position );				
+				renderer.render( scene, camera );
+			}
+		</script>
+	</body>
+</html>
+
+

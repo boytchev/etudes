@@ -1,0 +1,58 @@
+﻿<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="three.min.js"></script>
+		<link rel="stylesheet" href="../etudes.css">
+	</head>
+	
+	<body>
+		<script>
+
+			// create the scene
+			var renderer = new THREE.WebGLRenderer();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.setAnimationLoop( animate );
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+				
+			var scene = new THREE.Scene();
+			
+			var camera = new THREE.PerspectiveCamera( 30, window.innerWidth/window.innerHeight, 0.1, 1000 );
+				camera.position.set( 0, 0, 150 );
+				camera.lookAt( new THREE.Vector3( 0,0,0 ) );
+
+			var light1 = new THREE.PointLight( );
+				light1.position.set( 0,10,10);
+			
+			var light2 = new THREE.PointLight( 0x0000FF );
+				light2.position.set( 0,20,200 );
+				
+			scene.add( light1, light2 );
+			
+			
+			// the balls
+			var geometry = new THREE.IcosahedronGeometry( 4, 0 ),
+				material = new THREE.MeshPhongMaterial({
+					flatShading: true,
+					shininess: 50,
+					color: 0xFF4040,
+				});
+
+			var objA = new THREE.Mesh( geometry, material );
+			var objB = objA.clone();
+				objB.position.x = 20;
+				objB.material = objB.material.clone();
+				objB.material.color.setRGB(0,1,0);
+
+			scene.add( objA, objB );
+
+
+
+			function animate()
+			{
+				renderer.render( scene, camera );
+			}
+		</script>
+	</body>
+</html>

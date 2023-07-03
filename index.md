@@ -1,6 +1,11 @@
 This is a repository for the source code of various 3D programlets.
 
 
+### 31. [Bézier space [Threejs.js]](threejs/bezier-space.html)
+<a href="threejs/bezier-space.html"><img src="snapshots/bezier-space.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> If it is needed to freely deform a 3D object, it can be placed in a Bézier space. Its control points form a cage which manipulation generates a deformation in intuitive and predictable way. Internally, Bézier space is just a 3D version of Bézier surfaces and Bézier curves. 
+<div style="clear:both;"></div>
+
+
 ### 30. [Fluid effects [Threejs.js]](threejs/fluid-effects.html)
 <a href="threejs/fluid-effects.html"><img src="snapshots/fluid-effects.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Shaders are the common way to add posteffects to 3D scenes. However, in Three.js a thin transmissive layer above the scene could  mimic some effects without custom shaders and without using EffectComposer. This etude shows 16 formula-driven fluid effects.
 <div style="clear:both;"></div>

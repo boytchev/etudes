@@ -1,0 +1,163 @@
+﻿<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="three.min.js"></script>
+		<link rel="stylesheet" href="../etudes.css">
+	</head>
+	
+	<body>
+		<script>
+
+			// create the scene
+			var renderer = new THREE.WebGLRenderer();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.setAnimationLoop( animate );
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+				document.body.style.zIndex = 1;
+				
+			var renderer2 = new THREE.WebGLRenderer( {alpha: true});
+				renderer2.setSize( window.innerWidth, window.innerHeight );
+				renderer2.setAnimationLoop( animate2 );
+				document.body.appendChild( renderer2.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+				document.body.style.zIndex = 2;
+				
+			var scene = new THREE.Scene();
+
+			var scene2 = new THREE.Scene();
+
+			
+			var camera = new THREE.PerspectiveCamera( 30, window.innerWidth/window.innerHeight, 0.1, 1000 );
+				camera.position.set( 0, 0, 150 );
+				camera.lookAt( new THREE.Vector3( 0,0,0 ) );
+
+			var light1 = new THREE.PointLight( );
+				light1.position.set( 0,10,10);
+			
+			var light2 = new THREE.PointLight( 0x0000FF );
+				light2.position.set( 0,20,200 );
+				
+			scene.add( light1, light2 );
+			scene2.add( light1.clone(), light2.clone() );
+			
+			
+			var cloud = new THREE.Group();
+			scene.add( cloud );
+			
+			// the balls
+			var geometry = new THREE.IcosahedronGeometry( 4, 0 ),
+				material = new THREE.MeshPhongMaterial({
+					flatShading: true,
+					shininess: 50,
+					color: 0xFF4040,
+				});
+
+			for( var i=0; i<100; i++ )
+			{
+				var ball = new THREE.Mesh( geometry, material );
+				ball.position.set(
+					THREE.Math.randFloat(-100,100),
+					-1,
+					THREE.Math.randFloat(-100,100)
+				);
+				ball.rotation.x = THREE.Math.randFloat(0,2&Math.PI);
+				ball.rotation.y = THREE.Math.randFloat(0,2&Math.PI);
+				cloud.add( ball );
+			}
+			
+
+
+
+			var hud = new THREE.Mesh(
+				new THREE.BoxGeometry( 100, 30, 2 ),
+				new THREE.MeshBasicMaterial( {
+					color: 'white',
+					depthTest: false,
+					polygonOffset: true,
+					polygonOffsetUnits: -10,
+					polygonOffsetFactor: -10
+				} )
+			);
+			hud.position.z = -50;
+			scene.add( hud );
+
+			var hud2 = new THREE.Mesh(
+				new THREE.IcosahedronGeometry( 10, 0 ),
+				new THREE.MeshBasicMaterial( {
+					color: 'green',
+					depthTest: false,
+					polygonOffset: true,
+					polygonOffsetUnits: -10,
+					polygonOffsetFactor: -10
+				} )
+			);
+			hud2.position.z = -50;
+			scene.add( hud2 );
+
+
+			var hudA = new THREE.Mesh(
+				new THREE.BoxGeometry( 100, 30, 2 ),
+				new THREE.MeshLambertMaterial( {
+					color: 'white',
+//					blending: THREE.AdditiveBlending,
+					polygonOffset: true,
+					polygonOffsetUnits: 10,
+					polygonOffsetFactor: 10
+				} )
+			);
+			hudA.position.z = -50;
+
+			var hud2A = new THREE.Mesh(
+				new THREE.IcosahedronGeometry( 10, 0 ),
+				new THREE.MeshLambertMaterial( {
+					color: 'yellow',
+//					blending: THREE.AdditiveBlending,
+					polygonOffset: true,
+					polygonOffsetUnits: 10,
+					polygonOffsetFactor: 10
+				} )
+			);
+			hud2A.position.z = -50;
+			scene2.add( hudA, hud2A, light1.clone(), light2.clone() );
+
+
+			var clock = new THREE.Clock( true );
+
+
+
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+			
+			function onWindowResize( event )
+			{
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight, true );
+			}			
+
+
+			
+			function animate()
+			{
+				var time = clock.getElapsedTime();
+				
+				hud.rotation.y = time;
+				hud2.rotation.x = time/2;
+				
+				hudA.rotation.y = time;
+				hud2A.rotation.x = time/2;
+				
+				cloud.rotation.y = -0.2*time;
+				cloud.rotation.x = 0.2*Math.sin(time);
+				
+				renderer.clear( true, true, true );
+				renderer.render( scene, camera );
+				renderer.render( scene2, camera );
+			}
+		</script>
+	</body>
+</html>
