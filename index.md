@@ -1,6 +1,11 @@
 This is a repository for the source code of various 3D programlets.
 
 
+### 32. [Hologram sticker [Threejs.js]](threejs/hologram-sticker.html)
+<a href="threejs/hologram-sticker.html"><img src="snapshots/hologram-sticker.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Hologram stickers combine two images into one. By changing the point of view the stickers reveal one of the images. This étude simulated such hologram sticker by creating a completely static object (both its geometry and  material are static).
+<div style="clear:both;"></div>
+
+
 ### 31. [Bézier space [Threejs.js]](threejs/bezier-space.html)
 <a href="threejs/bezier-space.html"><img src="snapshots/bezier-space.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> If it is needed to freely deform a 3D object, it can be placed in a Bézier space. Its control points form a cage which manipulation generates a deformation in intuitive and predictable way. Internally, Bézier space is just a 3D version of Bézier surfaces and Bézier curves. 
 <div style="clear:both;"></div>

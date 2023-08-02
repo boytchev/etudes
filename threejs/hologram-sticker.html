@@ -1,0 +1,180 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link rel="stylesheet" href="../etudes.css">
+		
+		<script async
+			src="https://ga.jspm.io/npm:es-module-shims@1.5.1/dist/es-module-shims.js"
+			crossorigin="anonymous">
+		</script>
+		
+		<script type="importmap">
+		  {
+			"imports": {
+			  "three": "https://unpkg.com/three@0.155.0/build/three.module.js",
+			  "three/addons/": "https://unpkg.com/three@0.155.0/examples/jsm/"
+			}
+		  }
+		</script>
+	</head>
+	
+	<body>
+		<h1 class="white">Hologram sticker<a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		
+		<script type="module">
+			import * as THREE from 'three';
+			import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+			
+		
+			// construct and setup the scene
+			
+			var renderer = new THREE.WebGLRenderer( {antialias:true} );
+				renderer.outputColorSpace  = THREE.LinearSRGBColorSpace;
+				renderer.setAnimationLoop( animate );
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+
+			var scene = new THREE.Scene();
+				scene.background = new THREE.TextureLoader().load( 'hologram-sticker/room.jpg' );
+
+			var camera = new THREE.PerspectiveCamera( 40, 1, 0.05, 100 );
+				camera.position.set( 0, 0, 2.25 );
+				camera.lookAt( scene.position );
+			
+			var light1 = new THREE.DirectionalLight( 'white', 1 );
+				light1.position.set( 1, 0, 2 );
+			var light2 = new THREE.DirectionalLight( 'white', 1 );
+				light2.position.set( -1, 0, 2 );
+			var light3 = new THREE.DirectionalLight( 'white', 4 );
+				light3.position.set( 0, 0, 2 );
+				scene.add( light1, light2, light3 );
+				
+			var controls = new OrbitControls( camera, renderer.domElement );
+				controls.maxDistance = 10;
+				controls.minDistance = 1;
+				controls.enableDamping = true;
+
+
+
+			// maintain full screen
+			
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+			
+			function onWindowResize( event )
+			{
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight, true );
+
+				scene.background.repeat.set( window.innerWidth/window.innerHeight/2, 1 );
+			}			
+
+
+
+			// sticker shape
+			
+			const n = 250; // granularity
+			
+			var geometry = new THREE.BoxGeometry( 1, 1.2, 0.02, n ).toNonIndexed( ),
+				pos = geometry.getAttribute( 'position' ),
+				nor = geometry.getAttribute( 'normal' ),
+				uv = geometry.getAttribute( 'uv' );
+
+			var r = 0.05,
+				v = new THREE.Vector3(),
+				w = new THREE.Vector3(0,0,10.5);
+			for( var i=0; i<pos.count; i++ )
+			{
+				var x = pos.getX( i ),
+					y = pos.getY( i ),
+					z = pos.getZ( i );
+					
+				// round corners
+				var k = 0;
+				if( x+0.5< r ) k = r-(x+0.5);
+				if( x-0.5>-r ) k = r+(x-0.5);
+				k = r-Math.sqrt( r**2 - k**2 );
+				y -= k*Math.sign(y);
+
+				// zigzag surface
+				if( z > 0 )
+				{
+					k = (x/0.5)*Math.PI/2;
+					z += 3*(0.5+0.5*Math.cos(n*k)) / n;
+				}
+				pos.setXYZ( i, x, y, z );
+
+				// uv coordinates
+				var j = i - (n+1)*12,
+					tri = Math.floor(j/6),
+					step = Math.floor(tri/2);
+					
+				if( j >= 0 )
+				{
+					var u = uv.getX( i ) - step/n;
+					if( tri % 2 ) u += 0.5 - 1/n;
+					uv.setX( i, u );
+				}
+
+				// normals
+				var nx = nor.getX( i ),
+					ny = nor.getY( i ),
+					nz = nor.getZ( i );
+				if( nz > 0 )
+				{
+					v.set( x, y, z );
+					v.subVectors( w, v ).normalize();
+					v.x *= 0.5;
+					v.y *= 0.2;
+					v.normalize( );
+					nor.setXYZ( i, v.x, v.y, v.z );
+				}
+				else
+				{
+					nor.setXYZ( i, 0, 0, 0 );
+				}
+				
+			}
+
+
+			// sticker material
+
+			var material = new THREE.MeshPhysicalMaterial( {
+					map: new THREE.TextureLoader().load( 'hologram-sticker/dual_image.jpg' ),
+					roughness: 0.8,
+					metalness: 1.2,
+					iridescence: 0.3,
+				} );
+		
+
+			// sticker
+
+			var sticker = new THREE.Mesh( geometry,	material );
+				scene.add( sticker );
+
+
+			// animation loop
+
+			function animate( t )
+			{
+				controls.update( );
+				
+				var shift = THREE.MathUtils.mapLinear( camera.aspect, 1, 2, 1/4, 0 );
+				
+				scene.background.offset.set(
+					shift - controls.getAzimuthalAngle()/25,
+					0.05 - controls.getPolarAngle()/25
+				);
+					
+				renderer.render( scene, camera );
+			}
+		</script>
+	</body>
+</html>
+
+
