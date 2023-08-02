@@ -55,6 +55,8 @@
 			var controls = new OrbitControls( camera, renderer.domElement );
 				controls.maxDistance = 10;
 				controls.minDistance = 1;
+				controls.minAzimuthAngle = -2;
+				controls.maxAzimuthAngle = 2;
 				controls.enableDamping = true;
 
 
