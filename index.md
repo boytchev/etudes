@@ -2,7 +2,7 @@ This is a repository for the source code of various 3D programlets.
 
 
 ### 33. [Perspective projection [Suica.js + Three.js]](suica/perspective-projection.html)
-<a href="suica/perspective-projection.html"><img src="snapshots/perspective-projection.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Imagine a rotating cube animated on a smartphone screen. Although it is implemented by a matrix multiplication, it can be visualized as a set of rays between the viewer and a virtual object hanging in the 3D space behind the screen.
+<a href="suica/perspective-projection.html"><img src="snapshots/perspective-projection.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Imagine a rotating cube animated on a smartphone screen. Although it is implemented by a matrix multiplication, it can be visualized as a set of rays between the viewer and a virtual object rotating in the 3D space behind the screen.
 <div style="clear:both;"></div>
 
 
