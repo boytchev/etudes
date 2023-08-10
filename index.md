@@ -1,6 +1,10 @@
 This is a repository for the source code of various 3D programlets.
 
 
+### 33. [Perspective projection [Suica.js + Three.js]](suica/perspective-projection.html)
+<a href="suica/perspective-projection.html"><img src="snapshots/perspective-projection.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Imagine a rotating cube animated on a smartphone screen. Although it is implemented by a matrix multiplication, it can be visualize as a set of rays between the viewer and a virtual object hangin in the 3D space behing the screen.<div style="clear:both;"></div>
+
+
 ### 32. [Hologram sticker [Threejs.js]](threejs/hologram-sticker.html)
 <a href="threejs/hologram-sticker.html"><img src="snapshots/hologram-sticker.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Hologram stickers combine two images into one. By changing the point of view the stickers reveal one of the images. This étude simulated such hologram sticker by creating a completely static object (both its geometry and  material are static).
 <div style="clear:both;"></div>

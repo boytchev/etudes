@@ -1,0 +1,283 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="suica.js"></script>
+		<link rel="stylesheet" href="../etudes.css">
+	</head>
+	
+	<body>
+		<h1>Perspective projection <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		<h3>Click to show perspective, drag to rotate the scene</h3>
+		
+		<suica fullWindow onPointerDown="onPointerDown" onPointerUp="onPointerUp">
+			<orbit id="user" enableDamping="true">
+			
+			<!-- smartphone corners [0..3] -->
+			<sphere center="12,20" size="2" color="black">
+			<clone x="-12">
+			<clone y="-20">
+			<clone x="12">
+
+			<!-- smartphone edges [4..7] -->
+			<cylinder center="12,-20" size="2,40" color="black">
+			<clone x="-12">
+			<cylinder center="-12,-20" size="2,24" spin="90,90" color="black">
+			<clone y="20">
+
+			<!-- smartphone body [8..9] -->
+			<cube z="-0.5" size="24,40,1" color="black">
+			<clone z="0.5" color="white">
+
+			<!-- smartphone back camera panel [10..12] -->
+			<cylinder center="0,16,-1.2" size="4,1" spinV="90" color="black">
+			<clone y="12">
+			<cube center="0,14,-0.7" size="4,4,1" color="black">
+
+			<!-- smartphone back camera optics [13..16] -->
+			<sphere center="0,16,-1" size="3,3,0.5">
+			<clone y="12">
+			<clone size="2.2,2.2,0.55">
+			<clone y="16">
+			
+			<!-- smartphone front camera optics [17] -->
+			<clone z="1" y="19" size="1.5,1.5,0.3" color="black">
+				
+			<!-- smartphone side buttons [18..20] -->
+			<group id="button" y="14" x="-13.1" spin="90,90">
+				<cylinder z="1.5" size="1,0.3,1" color="dimgray">
+				<clone z="-1.5">
+				<cube y="0.15" size="1,0.3,3" color="dimgray">
+			</group>
+			<clone src="button" y="9">
+			<clone src="button" x="12.8">
+
+			<!-- projection center [21] -->
+			<sphere id="projectionCenter" z="30" size="4" color="white">
+
+			<!-- rotating cube -->
+			<cube id="cubeInside" z="-60" size="30" hidden>
+			<clone id="cubeFrame" wireframe color="black">
+			<clone id="cubeFrame2" color="white">
+		</suica>
+
+		
+		<script>
+			// get a list of all object to change their properties
+			var objects = suica0.allObjects();
+
+			// current transition state and the target state (1=show projection)
+			var state = 0,
+				targetState = 0;
+			
+			// environment maps - cube map and small equirectangular
+			var env = new THREE.CubeTextureLoader( )
+				.setPath( 'perspective-projection/' )
+				.load( ['posx.jpg', 'negx.jpg', 'posy.jpg', 'negy.jpg', 'posz.jpg', 'negz.jpg'] );
+				
+			var envSmall = new THREE.TextureLoader( )
+				.setPath( 'perspective-projection/' )
+				.load( 'env-small.jpg' );
+				envSmall.mapping = THREE.EquirectangularReflectionMapping;
+
+			// setup the scene background and lights
+			var scene = suica0.scene;
+				scene.background = env;
+				scene.backgroundBlurriness = 0;
+				scene.backgroundIntensity = 1;
+				scene.remove( suica0.light );
+				
+			user.target.set( 0,0,-10);		
+				
+			// adjust material of smartphone corners, edges and body
+			var cornerMaterial = new THREE.MeshPhysicalMaterial( {
+					color: 0x303030,
+					metalness: 1,
+					roughness: 0.02,
+					transparent: true,
+				} );
+			for( var i=0; i<=8; i++ )
+				objects[i].threejs.material = cornerMaterial;
+			objects[8].threejs.renderOrder = -200;
+			objects[8].threejs.material.envMap = env;
+			objects[9].threejs.material = new THREE.MeshBasicMaterial({color:'white'});
+
+			// adjust material of smartphone side buttons
+			for( var i=18; i<=20; i++ )
+			for( var elem of objects[i].groupElements )
+			{
+				elem.threejs.material.transparent = true;
+				elem.threejs.renderOrder = 100;
+			}
+			
+			// adjust material of cameras optics
+			var glassMaterial = new THREE.MeshPhysicalMaterial( {
+					color: 0x808080,
+					metalness: 2.2,
+					envMap: envSmall,
+					envMapIntensity: 0.7,
+					roughness: 0,
+				} );
+			for( var i=13; i<18; i++ )
+				objects[i].threejs.material = glassMaterial;
+
+			// adjust material or projection center
+			projectionCenter.threejs.renderOrder = 100;
+			projectionCenter.threejs.material = new THREE.MeshPhysicalMaterial( {
+				color: 'lightgray',
+				metalness: 0.9,
+				roughness: 0,
+				transparent: true,
+				envMap: envSmall,
+			} );
+			
+			// adjust material of the cube
+			cubeInside.threejs.material = new THREE.MeshPhysicalMaterial( {
+				transmission: 1,
+				metalness: 1,
+				roughness: 0.05,
+				transparent: true,
+				side: THREE.DoubleSide,
+				envMap: envSmall,
+			} );
+			cubeInside.threejs.renderOrder = -100;
+			
+			cubeFrame.threejs.material.transparent = true;			
+			cubeFrame.threejs.material.depthWrite = false;
+			cubeFrame.threejs.material.depthTest = false;
+			cubeFrame.threejs.renderOrder = -200;
+
+			cubeFrame2.threejs.renderOrder = 10;
+			cubeFrame2.threejs.material.transparent = true;	
+
+			// create projection lines and projection points
+			var projectionLines = [],
+				projectionPoints = [];
+			for( var i=0; i<8; i++ )
+			{
+				prism( 4, projectionCenter, [0.05,10], 'black' );
+				its.threejs.material.transparent = true;
+				its.threejs.material.depthWrite = false;
+				its.threejs.material.depthTest = false;
+				its.threejs.renderOrder = -90;
+				projectionLines.push( its );
+				
+				circle([ 0,0,0], 0.5 );
+				its.threejs.material.transparent = true;
+				projectionPoints.push( its );
+			}
+
+			// create result lines
+			var resultLines = [];
+			for( var i=0; i<12; i++ )
+			{
+				line( [0,0,0], [0,0,0], 'royalblue' );
+				its.threejs.material.transparent = true;
+				resultLines.push( its );
+			}
+
+			// amination loop function
+			suica0.ontime = function ( t, dT )
+			{
+				// lerp state towards target state
+				state = THREE.MathUtils.lerp( state, targetState, Math.min( 9*dT, 0.5 ) );
+				
+				// set opacities of objects
+				projectionCenter.threejs.material.opacity = state;
+				
+				cubeInside.threejs.material.opacity = state;
+				cubeFrame.threejs.material.opacity = 0.15*state;
+				cubeFrame2.threejs.material.opacity = state;
+
+				cubeInside.visible = state>0.05;
+				cubeFrame.visible = state>0.05;
+				cubeFrame2.visible = state>0.05;
+
+				objects[8].threejs.material.transparent = state>0.98;
+				
+				// get orbit controls angle and front/back position
+				var angle = user.getAzimuthalAngle(),
+					front = Math.abs(angle) < 1.57-0.15*state;
+				
+				
+				// update projection lines and calculate projection points
+				var i = 0;
+				for( var x=-15; x<=15; x+=30 )
+				for( var y=-15; y<=15; y+=30 )
+				for( var z=-15; z<=15; z+=30 )
+				{
+					// update projection lines
+					var line = projectionLines[i],
+						[xx, yy, zz] = cubeInside.objectPosition( [x,y,z] );
+						
+						line.lookAt( [xx, yy, zz] );
+						line.width = 0.1*(1-0.7*Math.cos( 2*angle ));
+						line.height = Math.sqrt( xx**2 + yy**2 + (projectionCenter.z-zz)**2 );
+						line.threejs.material.opacity = 0.2*state;
+
+					// adjust dynamic properties of projection points
+					var point = projectionPoints[i];
+						point.size = 80/(-zz+60);	
+						point.z = front ? 1.1 : -1.1;
+						point.color = front ? 'black' : 'gray';
+						point.threejs.material.opacity = front ? 1 : 0.3*state;
+					
+					// calculate coordinates of projection points
+					var k = (projectionCenter.z-point.z)/(projectionCenter.z-zz);
+						point.x = xx*k;
+						point.y = yy*k;
+
+					i++;
+				} // for z, y, x	
+
+				// update result lines
+				function updateLine( i, p0, p1 )
+				{
+					resultLines[i].from = projectionPoints[p0].center;
+					resultLines[i].to = projectionPoints[p1].center;
+					resultLines[i].color = front ? 'black' : 'gray';
+					resultLines[i].threejs.material.opacity = front ? 1 : 0.15*state;
+				}
+
+				updateLine( 0, 0, 1 );
+				updateLine( 1, 1, 3 );
+				updateLine( 2, 3, 2 );
+				updateLine( 3, 2, 0 );
+				
+				updateLine( 4, 4, 5 );
+				updateLine( 5, 5, 7 );
+				updateLine( 6, 7, 6 );
+				updateLine( 7, 6, 4 );
+				
+				updateLine( 8, 0, 4 );
+				updateLine( 9, 1, 5 );
+				updateLine( 10, 2, 6 );
+				updateLine( 11, 3, 7 );
+
+				// cube rotation
+				cubeInside.spin = [50*t, 60*t, 70*t];
+				cubeFrame.spin = cubeInside.spin;
+				cubeFrame2.spin = cubeInside.spin;
+
+				// scene lightness and sharpness
+				suica0.scene.backgroundBlurriness = 0.06*state;
+				suica0.scene.backgroundIntensity = 1-0.45*state;
+			}
+
+
+			// handle clicks manually because of orbot controls 
+			var downTime = 0;
+			function onPointerDown( )
+			{
+				downTime = suica0.lastTime;
+			}
+
+			function onPointerUp( )
+			{
+				if( suica0.lastTime-downTime < 0.3 )
+					targetState = 1-targetState;
+			}
+
+		</script>
+	</body>
+
+</html>
