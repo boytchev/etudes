@@ -1,6 +1,11 @@
 This is a repository for the source code of various 3D programlets.
 
 
+### 34. [Twisted torus [Three.js + CodePen]](threejs/twisted-torus.html)
+<a href="threejs/twisted-torus.html"><img src="snapshots/twisted-torus.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> This eude demonstrates how a twisted torus can be generated as a parametric surface. The cross-section of the torus is a rounded square made of [superellipse](https://en.wikipedia.org/wiki/Superellipse), otherwise the twisting is hard to notice.
+<div style="clear:both;"></div>
+
+
 ### 33. [Perspective projection [Suica.js + Three.js]](suica/perspective-projection.html)
 <a href="suica/perspective-projection.html"><img src="snapshots/perspective-projection.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Imagine a cube animated on a smartphone screen. Although it is implemented by a matrix multiplication, it can be visualized as a set of rays between the viewer and a virtual cube rotating in the 3D space behind the screen.
 <div style="clear:both;"></div>

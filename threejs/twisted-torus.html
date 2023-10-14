@@ -1,0 +1,98 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link rel="stylesheet" href="../etudes.css">
+		<script type="importmap">
+		  {
+			"imports": {
+			  "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+			  "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/"
+			}
+		  }
+		</script>
+	</head>
+	
+	<body>
+		<h1>Twisted torus <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		
+		<!-- https://codepen.io/boytchev/full/qBLKpjx -->
+		<!-- https://discourse.threejs.org/t/twisted-torus-parametric/56492 -->
+		
+		<script type="module">
+			import * as THREE from "three";
+			import { ParametricGeometry } from 'three/addons/geometries/ParametricGeometry.js';
+			import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+
+			// construct and setup the scene
+			
+			var renderer = new THREE.WebGLRenderer( {antialias: true} );
+				renderer.setSize( innerWidth, innerHeight );
+				renderer.setAnimationLoop( animationLoop );
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+						
+			var scene = new THREE.Scene();
+				scene.background = new THREE.Color( 'gainsboro' );
+
+			var camera = new THREE.PerspectiveCamera( 30, innerWidth/innerHeight );
+				camera.position.set( 0, 0, 25 );
+				camera.lookAt( scene.position );
+
+
+			// adjust to screen size
+			
+			window.addEventListener( "resize", (event) => {
+				camera.aspect = innerWidth/innerHeight;
+				camera.updateProjectionMatrix( );
+				renderer.setSize( innerWidth, innerHeight );
+			});
+
+
+			// interactive controls
+			
+			var controls = new OrbitControls( camera, renderer.domElement );
+				controls.enableDamping = true;
+				controls.autoRotate = true;
+
+
+			// parametric surface of a twister torus
+
+			function surface( u, v, target )
+			{
+				var n = 10,  // larger values make sharper square
+					t = 1.5; // larger values make more twists
+			
+				u *= 2*Math.PI;
+				v *= 2*Math.PI;
+			
+				var r = (Math.cos(v)**n + Math.sin(v)**n)**(-1/n),
+					x = (4+r*Math.cos(v+t*u)) * Math.cos(u),
+					y = (4+r*Math.cos(v+t*u)) * Math.sin(u),
+					z = r*Math.sin(v+t*u);
+				
+				target.set( x, y, z );
+			}
+
+
+			var torus = new THREE.Mesh(
+					new ParametricGeometry(surface, 100, 100),
+					new THREE.MeshNormalMaterial(),
+				);	
+				scene.add( torus );
+
+
+			function animationLoop( t )
+			{
+				controls.update( );
+				renderer.render( scene, camera );
+			}
+			
+		</script>
+	</body>
+</html>
+
+
