@@ -1,0 +1,80 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="suica.js"></script>
+		<script src="lil-gui.umd.js"></script>
+		<link rel="stylesheet" href="../etudes.css">
+	</head>
+	
+	<body>
+		<h1 class="white">Day and night <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		
+		<suica fullWindow background="black" ontime="animate">
+			<orbit altitude="0" distance="15">	
+			<sphere id="sun" size="1.8" color="white" image="day-and-night/sun.jpg">
+			<group id="halogroup">
+				<square id="halo" size="4" color="gold" spinV="90">
+			</group>
+			<group id="earth" _spinH="-90" _>
+				<group id="couple" x="5" spinV="-23.44">
+					<sphere size="0.05,4" color="white">
+					<sphere id="day" size="2" color="white" image="day-and-night/day.jpg">
+					<sphere id="night" size="2" color="white" image="day-and-night/night.jpg">
+				</group>
+			</group>
+			<point id="camera">
+			<sphere id="zone" hidden>
+		</suica>
+		
+		<script>
+			var params = {
+					sunSpeed: 50,
+					earthDaySpeed: 100,
+					earthYearSpeed: 20,
+					earthTiltAngle: 24.44,
+				};
+			var gui = new lil.GUI({title:'Space control'}).close();
+				gui.add( params, 'sunSpeed', -500, 500 ).step(10).name( 'Sun spinnig speed' );
+				gui.add( params, 'earthDaySpeed', -500, 500 ).step(10).name( 'Earth spinnig speed' );
+				gui.add( params, 'earthYearSpeed', -500, 500 ).step(10).name( 'Earth orbital speed' );
+				gui.add( params, 'earthTiltAngle', -180, 180 ).step(1).name( 'Earth tilt angle' );
+
+
+			suica0.renderer.localClippingEnabled = true;
+			eye = suica0.camera.position;
+			
+			halo.image = drawing( 128, 128 );
+			halo.image.context.filter = 'blur(10px)';
+			arc( 64, 64, 32 );
+			fill( 'white' );
+
+			nightHalf = night.threejs.material.clippingPlanes = [new THREE.Plane(new THREE.Vector3(),-5)];
+			dayHalf = day.threejs.material.clippingPlanes = [new THREE.Plane(new THREE.Vector3(),5)];
+
+			// stars
+			for( var i=0; i<5000; i++ )
+			{
+				zone.size = random(150,1000);
+				point( randomOn(zone), random(0.2,1), "white" );
+			}
+			
+			function animate( t, dT )
+			{
+				camera.center = [eye.x,eye.y,eye.z];
+				halogroup.lookAt( camera );
+				
+				couple.spinV = params.earthTiltAngle;
+				
+				sun.spinH += params.sunSpeed*dT;
+				earth.spinH += params.earthYearSpeed*dT;
+				day.spinT += params.earthDaySpeed*dT;
+				night.spinT += params.earthDaySpeed*dT;
+
+				angle = radians(earth.spinH+90);
+				nightHalf[0].normal.set( Math.sin(angle), 0, Math.cos(angle) );
+				dayHalf[0].normal.set( -Math.sin(angle), 0, -Math.cos(angle) );
+			}
+		</script>
+	</body>
+
+</html>

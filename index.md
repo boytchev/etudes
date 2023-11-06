@@ -1,8 +1,13 @@
 This is a repository for the source code of various 3D programlets.
 
 
+### 35. [Day and night [Suica]](suica/day-and-night.html)
+<a href="suica/day-and-night.html"><img src="snapshots/day-and-night.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> A recreation of an ancient Elica demo called " Day and night" (here is a [video](https://www.youtube.com/watch?v=LCLw1s5oD8w) published in 2010). This etude adds control for the speed of Sun's and Earth's rotations (including negative speeds), Earth's orbital speed and Earth's tilt angle.
+<div style="clear:both;"></div>
+
+
 ### 34. [Twisted torus [Three.js + CodePen]](threejs/twisted-torus.html)
-<a href="threejs/twisted-torus.html"><img src="snapshots/twisted-torus.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> This eude demonstrates how a twisted torus can be generated as a parametric surface. The cross-section of the torus is a rounded square made of [superellipse](https://en.wikipedia.org/wiki/Superellipse), otherwise the twisting is hard to notice.
+<a href="threejs/twisted-torus.html"><img src="snapshots/twisted-torus.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> This etude demonstrates how a twisted torus can be generated as a parametric surface. The cross-section of the torus is a rounded square made of [superellipse](https://en.wikipedia.org/wiki/Superellipse), otherwise the twisting is hard to notice.
 <div style="clear:both;"></div>
 
 
