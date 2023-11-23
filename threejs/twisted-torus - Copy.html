@@ -1,0 +1,175 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link rel="stylesheet" href="../etudes.css">
+		<script type="importmap">
+		  {
+			"imports": {
+			  "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+			  "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/"
+			}
+		  }
+		</script>
+	</head>
+	
+	<body>
+		//<h1>Twisted torus <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		
+		<!-- https://codepen.io/boytchev/full/qBLKpjx -->
+		<!-- https://discourse.threejs.org/t/twisted-torus-parametric/56492 -->
+		
+		<script type="module">
+			import * as THREE from "three";
+			import { ParametricGeometry } from 'three/addons/geometries/ParametricGeometry.js';
+			import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+
+			// construct and setup the scene
+			
+			var renderer = new THREE.WebGLRenderer( {antialias: true} );
+				renderer.setSize( innerWidth, innerHeight );
+				renderer.setAnimationLoop( animationLoop );
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+						
+			var scene = new THREE.Scene();
+				scene.background = new THREE.Color( 'gainsboro' );
+
+			var camera = new THREE.PerspectiveCamera( 30, innerWidth/innerHeight );
+				camera.position.set( 0, 0, 25 );
+				camera.lookAt( scene.position );
+
+
+			// adjust to screen size
+			
+			window.addEventListener( "resize", (event) => {
+				camera.aspect = innerWidth/innerHeight;
+				camera.updateProjectionMatrix( );
+				renderer.setSize( innerWidth, innerHeight );
+			});
+
+
+			// interactive controls
+			
+			var controls = new OrbitControls( camera, renderer.domElement );
+				controls.enableDamping = true;
+				//controls.autoRotate = true;
+
+
+			function updateParametricSurface( geometry, func, slices, stacks )
+			{
+				const EPS = 0.00001;
+
+				const normal = new THREE.Vector3();
+
+				const p0 = new THREE.Vector3(), p1 = new THREE.Vector3();
+				const pu = new THREE.Vector3(), pv = new THREE.Vector3();
+
+				// regenerate vertices and normals
+
+				const sliceCount = slices + 1;
+
+				var idx = 0;
+				var pos = geometry.getAttribute( 'position' );
+				var nor = geometry.getAttribute( 'normal' );
+				
+				for( var i=0; i<=stacks; i++ )
+				{
+					const v = i / stacks;
+					for ( var j=0; j<=slices; j++ )
+					{
+						const u = j / slices;
+
+						// vertex
+
+						func( u, v, p0 );
+						pos.setXYZ( idx, p0.x, p0.y, p0.z );
+
+						// normal
+
+						if ( u - EPS >= 0 ) {
+
+							func( u - EPS, v, p1 );
+							pu.subVectors( p0, p1 );
+
+						} else {
+
+							func( u + EPS, v, p1 );
+							pu.subVectors( p1, p0 );
+
+						}
+
+						if ( v - EPS >= 0 ) {
+
+							func( u, v - EPS, p1 );
+							pv.subVectors( p0, p1 );
+
+						} else {
+
+							func( u, v + EPS, p1 );
+							pv.subVectors( p1, p0 );
+
+						}
+
+						// cross product of tangent vectors returns surface normal
+
+						normal.crossVectors( pu, pv ).normalize();
+						nor.setXYZ( idx, normal.x, normal.y, normal.z );
+						
+						idx++;
+					} // for j
+				} // for i
+				
+				pos.needsUpdate = true;
+				nor.needsUpdate = true;
+				
+			} // updateParametricSurface
+
+
+
+			// parametric surface of a twister torus
+
+			var time = 0;
+			function surface( u, v, target )
+			{
+				var n = 10,  // larger values make sharper square
+					t = 0; // larger values make more twists
+			
+				u *= 2*Math.PI;
+				v *= 2*Math.PI;
+			
+				t = 3*Math.cos(time/1000) * (0.5+0.5*Math.cos(u-Math.PI));
+				
+				var r = (Math.cos(v)**n + Math.sin(v)**n)**(-1/n),
+					x = (4+r*Math.cos(v+t*u)) * Math.cos(u),
+					y = (4+r*Math.cos(v+t*u)) * Math.sin(u),
+					z = r*Math.sin(v+t*u);
+				
+				target.set( x, y, z );
+			}
+
+
+			var torus = new THREE.Mesh(
+					new ParametricGeometry(surface, 230, 130),
+					new THREE.MeshNormalMaterial(),
+				);	
+				torus.rotation.x = Math.PI/2;
+				scene.add( torus );
+
+
+			function animationLoop( t )
+			{
+				time = t;
+				updateParametricSurface( torus.geometry, surface, 230, 130 );
+				controls.update( );
+				renderer.render( scene, camera );
+			}
+			
+		</script>
+	</body>
+</html>
+
+
