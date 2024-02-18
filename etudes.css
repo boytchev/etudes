@@ -42,7 +42,32 @@ a:hover {
 	color: white;
 }
 
+.gray, .gray a {
+	color: gray;
+}
+
 sup {
 	padding-left: 0.1em;
 	font-size: 65%;
+}
+
+.credits {
+	text-align: center;
+	font-family: Cordana, Calibri, sans-serif;
+	position: absolute;
+	width: 100%;
+	bottom: 0.5em;
+}
+
+.credits a {
+	float: none;
+	font-size: 100%;
+	text-decoration: none;
+	padding: 0;
+	border-bottom: dotted 1px gray;
+}
+
+.credits a:hover {
+	background: none;
+	color: white;
 }
