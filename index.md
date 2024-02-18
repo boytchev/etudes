@@ -1,6 +1,11 @@
 This is a repository for the source code of various 3D programlets.
 
 
+### 36. [Wind waves [Three.js]](threejs/wind-waves.html)
+<a href="threejs/wind-waves.html"><img src="snapshots/wind-waves.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Water in wind generated waves exibits circular motion at or near the water surface. The water stays almost at the same place, but the peaks of its motion are relayed in the form of waves. This etude is a recreation of the Elica video "[Circular motion in wind generated waves](https://www.youtube.com/watch?v=NShUBfJQEHk)".
+<div style="clear:both;"></div>
+
+
 ### 35. [Day and night [Suica]](suica/day-and-night.html)
 <a href="suica/day-and-night.html"><img src="snapshots/day-and-night.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> A recreation of an ancient Elica demo called " Day and night" (here is a [video](https://www.youtube.com/watch?v=LCLw1s5oD8w) published in 2010). This etude adds control for the speed of Sun's and Earth's rotations (including negative speeds), Earth's orbital speed and Earth's tilt angle.
 <div style="clear:both;"></div>

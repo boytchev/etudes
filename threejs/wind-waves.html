@@ -1,0 +1,440 @@
+﻿<!DOCTYPE html>
+
+<html>
+
+<head>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="stylesheet" href="../etudes.css">
+	<script type="importmap">
+	  {
+		"imports": {
+		  "three": "./three161.module.min.js",
+		  "three/addons2/": "https://unpkg.com/three@0.161.0/examples/jsm/",
+		  "three/addons/": "./wind-waves/"
+		}
+	  }
+	</script>
+</head>
+
+<body>
+	<h1 class="white">Wind waves <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+	
+	<!--
+		Audio by straget, February 23rd, 2024, CC 0
+		https://freesound.org/people/straget/sounds/412308/
+	-->
+	<audio id="audio" preload>
+		<source src="wind-waves/412308__straget__big-waves-hit-land.ogg" type="audio/ogg">
+		<source src="wind-waves/412308__straget__big-waves-hit-land.mp3" type="audio/mpeg">
+	</audio>
+
+	
+	<script type="module">
+		import * as THREE from "three";
+		import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+		import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+		import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+		import { SimplexNoise } from "three/addons/math/SimplexNoise.js";
+		import * as lil from 'three/addons/libs/lil-gui.module.min.js';
+
+		// construct and setup the scene
+		
+		var renderer = new THREE.WebGLRenderer( {antialias: true} );
+			renderer.setSize( innerWidth, innerHeight );
+			renderer.setAnimationLoop( animationLoop );
+			document.body.appendChild( renderer.domElement );
+			document.body.style.margin = 0;
+			document.body.style.overflow = 'hidden';
+					
+		var scene = new THREE.Scene();
+			scene.background = new THREE.Color( 0x000000 );
+			scene.fog = new THREE.FogExp2( 0x000000, 0.03 );
+
+		var camera = new THREE.PerspectiveCamera( 30, innerWidth/innerHeight );
+			camera.position.set( 0, 4, 15 );
+			camera.lookAt( scene.position );
+
+		var light = new THREE.DirectionalLight( 'white', 4 );
+			light.position.set( 0, -10, 20 );
+
+		var light1 = new THREE.DirectionalLight( 'white', 1/12 );
+			light1.position.set( 2, 5, -20 );
+		
+		var light2 = new THREE.DirectionalLight( 'white', 1/12 );
+			light2.position.set( -2, 5, -20 );
+
+		var light3 = new THREE.DirectionalLight( 'steelblue', 0.5 );
+			light3.position.set( 0, -10, -20 );
+			
+			scene.add( light, light1, light2, light3 );
+		
+		
+		// adjust to screen size
+		
+		window.addEventListener( "resize", (event) => {
+			camera.aspect = innerWidth/innerHeight;
+			camera.updateProjectionMatrix( );
+			renderer.setSize( innerWidth, innerHeight );
+		});
+
+
+		// interactive controls
+		
+		var controls = new OrbitControls( camera, renderer.domElement );
+			controls.enableDamping = true;
+			controls.enablePan = false;
+			controls.enableZoom = false;
+			controls.minPolarAngle = 1;
+			controls.maxPolarAngle = 2;
+			controls.minAzimuthAngle = -0.5;
+			controls.maxAzimuthAngle = +0.5;
+
+
+		// interactive panel for user control
+		
+		var data = {
+				height: 1,
+				curved: 0.6,
+				ducks: true,
+				indicators: false,
+				dimmer: false,
+				sound: false,
+			};
+		var gui = new lil.GUI({title:'Wave Controls'});
+			gui.add( data, 'height', 0, 1 ).name( 'Height' ).step(0.01).onChange((h)=>{
+				indicators[3].scale.set(h,h,h);
+				indicators[4].scale.set(h,h,h);
+				indicators[5].scale.set(h,h,h);
+				h = h**0.5;
+				indicators[0].scale.set(h,h,h);
+				indicators[1].scale.set(h,h,h);
+				indicators[2].scale.set(h,h,h);
+			});
+			gui.add( data, 'curved', 0, 1 ).name( 'Curved' ).step(0.01);
+			gui.add( data, 'ducks' ).name( 'Ducks' ).onChange(
+						()=>{
+								for( var duck of ducks )
+									duck.visible = data.ducks;
+							} );
+			gui.add( data, 'indicators' ).name( 'Indicators' ).onChange(
+						()=>{
+								for( var indi of indicators )
+									indi.visible = data.indicators;
+							} );
+			gui.add( data, 'dimmer' ).name( 'Dimmer' ).onChange(
+						() => dimmer.visible = data.dimmer );
+			gui.add( data, 'sound' ).name( 'Sound' ).onChange(
+						(s)=>{
+								var audio = document.getElementById( 'audio' );
+									audio.loop = true;
+									
+								if( s )
+									audio.play();
+								else
+									audio.pause();
+							});
+
+
+		// a multi-purpose texture for the water surface
+		
+		var CS = 512;
+		var canvas = document.createElement( 'CANVAS' );
+			canvas.width = CS;
+			canvas.height = CS;
+
+		var context = canvas.getContext( '2d' );
+			context.fillStyle = 'black';
+			context.fillRect( 0, 0, CS, CS );
+			
+		var simplex = new SimplexNoise( );
+		
+		for( var x=0; x<CS; x++ )
+		for( var y=0; y<CS; y++ )
+		{
+			var k =   (simplex.noise(x/12,y/12))
+					+ (simplex.noise(x/6,y/6))/2
+					+ (simplex.noise(x/3,y/3))/4;
+
+			k = (k+1)/5;
+			k = k*k+0.2;
+			context.fillStyle = `rgb(${255*k},${255*k},${255*k})`;
+			context.fillRect( x, y, 1, 1 );
+		}
+		
+		var texture = new THREE.CanvasTexture( canvas );
+			texture.repeat.set( 1, 1 );
+
+			
+		// wave surface
+		
+		const SX = 50, SY = 50;		// size in world units
+		const NX = 800, NY = 10;	// size in vertices
+		
+		var wave = new THREE.Mesh(
+				new THREE.PlaneGeometry( SX, SY, NX, NY ),
+				new THREE.MeshPhysicalMaterial( {
+						color: 'royalblue',
+						roughnessMap: texture,		// <- purpose 1
+						roughness: 0.5,
+						metalness: 1,
+						transmission: 1,
+						side: THREE.DoubleSide,
+						depthWrite: false,
+						emissive: 'royalblue',
+						emissiveMap: texture,		// <- purpose 2
+						emissiveIntensity: 2,
+						sheen: 1,
+						sheenColor: 'teal',
+						sheenRoughness: 0,
+						sheenColorMap: texture,		// <- purpose 3
+						blending: THREE.AdditiveBlending,
+				} )
+			);
+			wave.position.z = -20;
+			wave.rotation.x = Math.PI/2;
+			
+		var wavePos = wave.geometry.getAttribute('position');
+
+		scene.add( wave );
+
+
+		// white line surface
+		
+		var line = new THREE.Mesh(
+				new THREE.PlaneGeometry( SX, 1, NX, 1 ),
+				new THREE.MeshBasicMaterial( {color: 'white', side:THREE.DoubleSide} )
+			);
+			line.position.z = 5;
+			
+			
+		// front wall surface
+		
+		var wall = new THREE.Mesh(
+				new THREE.PlaneGeometry( SX, 100, NX, 1 ),
+				new THREE.MeshBasicMaterial( {color: 'royalblue', transparent:true, opacity:0.6} )
+			);
+			wall.position.z = 5;
+			
+			
+		// black dimmer surface
+		
+		var dimmer = new THREE.Mesh(
+				new THREE.PlaneGeometry( 100, 100 ),
+				new THREE.MeshBasicMaterial( {color: 'black', transparent:true, opacity:1} )
+			);
+			dimmer.position.z = 4.99;
+			dimmer.renderOrder = -200;
+			dimmer.visible = false;
+			
+		scene.add( line, wall, dimmer );
+
+
+		// tetxure for the water particles
+		
+		canvas = document.createElement( 'CANVAS' );
+		canvas.width = 64;
+		canvas.height = 64;
+
+		context = canvas.getContext( '2d' );
+		context.globalAlpha = 0.25;
+		context.fillStyle = 'white';
+		context.filter = 'blur(2px)';
+		context.beginPath();
+		context.arc( 32, 32, 28, 0, 2*Math.PI );
+		context.fill( );
+		
+		var particleTexture = new THREE.CanvasTexture( canvas );
+
+
+		// particles
+		
+		var PN = 5, // numebr of layers
+			particles = [];
+			
+		for( var p=0; p<PN; p++ )
+		{
+			var parts = new THREE.Points(
+					new THREE.PlaneGeometry( SX, SY, 20, 10 ),
+					new THREE.PointsMaterial( {
+							color: 'White',
+							map: particleTexture,
+							size: 0.4*(1-p/PN),
+							transparent: true,
+							opacity: (1-Math.sqrt(p/PN))/2,
+							blending: THREE.AdditiveBlending,
+					} )
+				);
+			parts.geometry.deleteAttribute( 'uv' );
+			parts.position.y = -2*p;
+			parts.position.z = -20.01;
+			parts.rotation.x = Math.PI/2;
+			parts.renderOrder = -100;
+
+			particles.push( parts );
+			scene.add( parts );
+		}
+		
+		
+		// function to move horizontal vertices in circles
+		
+		function circularMotion( mesh, time, radius, NX, NY, normals )
+		{
+			var geo = mesh.geometry,
+				pos = geo.getAttribute( 'position' );
+
+			for( var i=0; i<pos.count; i++ )
+			{
+				var x = pos.getX(i),
+					IX = i % (NX+1),
+					t = time + 40*IX/NX + data.curved*Math.sin(0.35*pos.getY(i)*Math.sin(time/20)+0.35*pos.getX(i)*Math.cos(i/NX+time/10)+Math.sin(time/3));
+					
+				var dZ = radius*Math.cos( t ),
+					dX = radius*Math.sin( t );
+
+				pos.setX( i, dX + SX*(IX/NX - 0.5) );
+				pos.setZ( i, dZ );
+			}
+			
+			pos.needsUpdate = true;
+			if( normals ) geo.computeVertexNormals( );
+		}
+		
+		
+		// function to move vertical vertices in circles
+		
+		function verticalMotion( time, radius )
+		{
+			var geo1 = line.geometry,
+				pos1 = geo1.getAttribute( 'position' );
+
+			var geo2 = wall.geometry,
+				pos2 = geo2.getAttribute( 'position' );
+		
+			for( var i=0; i<NX+1; i++ )
+			{
+				var x = pos1.getX(i),
+					IX = i % (NX+1),
+					t = time + 40*IX/NX + data.curved*Math.sin(0.35*(25)*Math.sin(time/20)+0.35*pos1.getX(i)*Math.cos(i/NX+time/10)+Math.sin(time/3));
+					
+				var dY = -radius*Math.cos( t ),
+					dX = radius*Math.sin( t );
+
+				pos1.setX( i, dX + SX*(IX/NX - 0.5) );
+				pos1.setY( i, dY+0.025 );
+
+				pos1.setX( i+NX+1, dX + SX*(IX/NX - 0.5) );
+				pos1.setY( i+NX+1, dY-0.025 );
+
+				pos2.setX( i, dX + SX*(IX/NX - 0.5) );
+				pos2.setY( i, dY-0.025 );
+
+			}
+			
+			pos1.needsUpdate = true;
+			pos2.needsUpdate = true;
+		}
+		
+
+
+		// load a GLTF model 
+		// "Rubber duck" (https://skfb.ly/6TsSv) by Ikki_3d
+		// Licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
+
+		var DN = 8;
+		var duckURL = 'wind-waves/rubber_duck.glb',
+			ducks = [];
+
+		var loader = new GLTFLoader(),
+			dracoLoader = new DRACOLoader();
+			dracoLoader.setDecoderPath( 'wind-waves/' );
+			loader.setDRACOLoader( dracoLoader );
+
+		loader.load( duckURL, gltf => {
+				ducks[0] = gltf.scene;
+				ducks[0].children[0].rotation.z = -Math.PI/2;
+				ducks[0].scale.setScalar(0.003);
+				ducks[0].rotY = 0;
+				ducks[0].visible = data.ducks;
+				scene.add( ducks[0] );
+				
+				for( var i=1; i<DN; i++ )
+				{
+					ducks[i] = ducks[0].clone();
+					ducks[i].rotY = i*i;
+					scene.add( ducks[i] );
+				}
+		} );
+
+
+		// indicators
+		
+		var indigeo = new THREE.SphereGeometry( 0.15 ).scale(1,1,1/2),
+			indicir = new THREE.TorusGeometry( 1, 0.05 ).scale(1,1,1/2),
+			indimat = new THREE.MeshLambertMaterial( {color: 'white'} ),
+			indicat = new THREE.MeshLambertMaterial( {color: 'lightgray'} );
+			
+		var indicators = [];
+			indicators.push( new THREE.Mesh( indigeo, indimat ) );
+			indicators.push( new THREE.Mesh( indigeo, indimat ) );
+			indicators.push( new THREE.Mesh( indigeo, indimat ) );
+			indicators.push( new THREE.Mesh( indicir, indicat ) );
+			indicators.push( new THREE.Mesh( indicir, indicat ) );
+			indicators.push( new THREE.Mesh( indicir, indicat ) );
+
+			indicators[3].position.set( wavePos.getX(NX/2-40), -wavePos.getZ(NX/2-40), -20+wavePos.getY(NX/2-40) );
+			indicators[4].position.set( wavePos.getX(NX/2), -wavePos.getZ(NX/2), -20+wavePos.getY(NX/2) );
+			indicators[5].position.set( wavePos.getX(NX/2+40), -wavePos.getZ(NX/2+40), -20+wavePos.getY(NX/2+40) );
+
+			for( var ind of indicators ) ind.visible = false;
+			
+		scene.add( ...indicators );
+
+		
+		// animation loop
+		
+		var oldTime = 0;
+		
+		function animationLoop( time )
+		{
+			var dTime = time-oldTime;
+				oldTime = time;
+				
+			var k = data.height; // wave height
+			
+			circularMotion( wave, time/500, k, NX, NY, true );
+			verticalMotion( time/500, k );
+			for( var p=0; p<PN; p++ )
+				circularMotion( particles[p], time/500, k/(1+p), 20, 20, false );
+			
+			indicators[0].position.set( wavePos.getX(NX/2-40), -wavePos.getZ(NX/2-40), -20+wavePos.getY(NX/2-40) );
+			indicators[1].position.set( wavePos.getX(NX/2), -wavePos.getZ(NX/2), -20+wavePos.getY(NX/2) );
+			indicators[2].position.set( wavePos.getX(NX/2+40), -wavePos.getZ(NX/2+40), -20+wavePos.getY(NX/2+40) );
+
+			if( ducks[0] )
+			{
+				for( var i=0; i<DN; i++ )
+				{
+					var j = (NX*i + 3*NX/2 + 50*Math.round(((i**5+3) % 7)-3));
+					
+					ducks[i].rotY += (k+0.1)*dTime/1000;
+					
+					ducks[i].position.set( wavePos.getX(j),-wavePos.getZ(j)-0.1,-20+wavePos.getY(j) );
+					ducks[i].rotation.set(
+						(k+0.2)*(Math.cos( i+time/400 )/3 + Math.sin( i-time/500 )/4),
+						(k+0.2)*(Math.sin( i+time/400 )/3 + Math.cos( i-time/500 )/4) + ducks[i].rotY,
+						(k+0.2)*(Math.cos( i-time/400 )/3 + Math.sin( i+time/500 )/4),
+						'YXZ');
+				}
+			}
+			
+			controls.update( );
+			light.position.copy( camera.position );
+			renderer.render( scene, camera );
+		}
+		
+	</script>
+</body>
+
+</html>
+
+
