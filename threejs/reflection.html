@@ -1,0 +1,255 @@
+﻿<!DOCTYPE html>
+
+<html>
+
+<head>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="stylesheet" href="../etudes.css">
+	<script type="importmap">
+	  {
+		"imports": {
+		  "three": "./161/three.module.min.js",
+		  "three/addons/": "./161/jsm/"
+		}
+	  }
+	</script>
+</head>
+
+
+	
+<body>
+	<h1 class="black">Reflection <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+	<div class="gray credits">Models: "Boss" by <a href="https://www.mixamo.com">mixamo.com</a> and
+	"Running Mei" by <a href="skfb.ly/YnFH">cgart.com</a></div>
+
+
+	<script type="module">
+		import * as THREE from "three";
+		import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+		import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
+		import { SimplexNoise } from "three/addons/math/SimplexNoise.js";
+		import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+
+		// construct and setup the scene
+		
+		var renderer = new THREE.WebGLRenderer( {antialias: true} );
+			renderer.setSize( innerWidth, innerHeight );
+			renderer.setAnimationLoop( animationLoop );
+			document.body.appendChild( renderer.domElement );
+			document.body.style.margin = 0;
+			document.body.style.overflow = 'hidden';
+			renderer.outputColorSpace = THREE.SRGBColorSpace;
+					
+		var azure = 0xE0F0FF;
+		
+		var scene = new THREE.Scene();
+			scene.background = new THREE.Color( 0xF0F8FF );
+			scene.fog = new THREE.Fog( scene.background, 20, 25 );
+
+		var camera = new THREE.PerspectiveCamera( 30, innerWidth/innerHeight );
+			camera.position.set( 0, 3, 20 );
+			camera.lookAt( new THREE.Vector3(0,1,0) );
+
+		var light = new THREE.DirectionalLight( 'white', 5 );
+			light.position.set( 0, 0, 100 );
+			light.decay = 0;
+			scene.add( light );
+		
+		var light2 = new THREE.DirectionalLight( 'white', 2 );
+			light2.position.set( 0, 100, 0 );
+			light2.decay = 0;
+			scene.add( light2 );
+		
+		
+		// adjust to screen size
+		
+		window.addEventListener( "resize", (event) => {
+			camera.aspect = innerWidth/innerHeight;
+			camera.updateProjectionMatrix( );
+			renderer.setSize( innerWidth, innerHeight );
+		});
+
+
+		// generate model reflection
+		
+		function modelReflection( model, scale )
+		{
+			model.traverse( function ( child )
+			{
+				if( child.material?.map )
+				{
+					//child.material.map.colorSpace = THREE.SRGBColorSpace;
+				}
+			} );				
+			
+			model.scale.setScalar( scale );
+			
+			var animator = new THREE.AnimationMixer( model );
+				animator.clipAction( model.animations[0] ).play();
+				
+			animators.push( animator );
+			
+			var reflection = SkeletonUtils.clone( model );
+				reflection.scale.y = -scale;
+				reflection.position.y = -0.7;
+
+			animator = new THREE.AnimationMixer( reflection );
+			animator.clipAction( reflection.animations[0] ).play();
+			
+			animators.push( animator );
+			
+			var result = new THREE.Group();
+				result.add( model, reflection );
+				
+			scene.add( result );
+				
+			return result;
+			
+		} // modelRefection
+		
+		
+		// load the boss and Mei
+
+		var animators = [], boss, mei;
+		
+		new FBXLoader().load( 'reflection/BossOffensiveIdle.fbx',
+			fbx => {boss = modelReflection( fbx, 0.02 );}
+		);
+
+		new FBXLoader().load( 'reflection/Mei_Run.fbx',
+			fbx => {mei = modelReflection( fbx, 0.013 );}
+		);
+						
+			
+		// generate a texture for the water/ice surface
+		
+		function waterTexture( )
+		{
+			var canvas = document.createElement( 'CANVAS' );
+				canvas.width = 256;
+				canvas.height = 256;
+
+			var context = canvas.getContext( '2d' );
+				
+			var simplex = new SimplexNoise( );
+			
+			for( var x=0; x<256; x++ )
+			for( var y=0; y<256; y++ )
+			{
+				var k =   (simplex.noise(x/12,y/12))
+						+ (simplex.noise(x/6,y/6))/2
+						+ (simplex.noise(x/3,y/3))/4;
+
+				k = (k+1)/5;
+				k = 2*k;
+				context.fillStyle = `rgb(${255*k},${255*k},${255*k})`;
+				context.fillRect( x, y, 1, 1 );
+			}
+			
+			var texture = new THREE.CanvasTexture( canvas );
+				texture.repeat.set( 3, 3 );
+				texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+				
+			return texture;
+		}
+
+
+		// water/ice surface
+		
+		var water = new THREE.Mesh(
+				new THREE.CircleGeometry( 20, 50, 1 ),
+				new THREE.MeshPhysicalMaterial({
+					color: azure,
+					bumpMap: waterTexture(),
+					bumpScale: 1.5,
+					transmission: 1,
+					roughness: 0.2,
+					metalness: 0,
+					ior: 2,
+					thickness: 1,
+					specularIntensity: 0.2,
+				})
+			);
+				
+		water.rotation.x = -Math.PI/2;
+		scene.add( water );
+
+
+		// generate fog texture
+		
+		function fogTexture( )
+		{
+			var canvas = document.createElement( 'CANVAS' );
+				canvas.width = 8;
+				canvas.height = 64;
+
+			var context = canvas.getContext( '2d' );
+			
+			var gradient = context.createLinearGradient( 0, 0, 0, 64 );
+				gradient.addColorStop( 0.2, 'black' );
+				gradient.addColorStop( 0.4, 'lightgray' );
+				gradient.addColorStop( 0.6, 'white' );
+				
+			context.fillStyle = gradient;
+			context.fillRect( 0, 0, 8, 64 );
+						
+			return new THREE.CanvasTexture( canvas );
+		}
+		
+		
+		// fader
+		
+		var faderFog = new THREE.Mesh(
+				new THREE.PlaneGeometry( 40, 15 ),
+				new THREE.MeshBasicMaterial({
+					color: azure,
+					transparent: true,
+					alphaMap: fogTexture(),
+					opacity: 1,
+					polygonOffset: true,
+					polygonOffsetUnits: -1,
+					polygonOffsetFactor: -1,
+				})
+			);
+			faderFog.position.z = 8;
+			faderFog.rotation.x = -Math.PI/2;
+			scene.add( faderFog );
+		
+		
+		// animation loop
+		
+		var oldTime = 0;
+		
+		function animationLoop( time )
+		{
+			water.rotation.z = time/4000;
+
+			var dTime = time-oldTime;
+				oldTime = time;
+			
+			for( var animator of animators )
+				animator.update( dTime/1000 );
+
+			if( boss )
+			{
+				boss.rotation.y = time/2500;
+			}
+			
+			if( mei )
+			{
+				mei.position.x = 15*Math.sin(time/2500);
+				mei.position.z = 1*Math.cos(time/2500);
+				mei.rotation.y = Math.PI/2 * Math.sign(Math.cos(time/2500));
+			}
+
+			renderer.render( scene, camera );
+			
+		} // animationLoop
+		
+	</script>
+	
+</body>
+
+</html>
+
+

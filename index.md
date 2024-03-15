@@ -1,6 +1,11 @@
 This is a repository for the source code of various 3D programlets.
 
 
+### 37. [Reflection [Three.js]](threejs/reflection.html)
+<a href="threejs/reflection.html"><img src="snapshots/reflection.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Reflections usually require custom shaders or additional post-processing effects. However, in some specific conditions reflections could be faked by adding upside-down model for each reflected model.
+<div style="clear:both;"></div>
+
+
 ### 36. [Wind waves [Three.js]](threejs/wind-waves.html)
 <a href="threejs/wind-waves.html"><img src="snapshots/wind-waves.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Water in wind generated waves exibits circular motion at or near the water surface. The water stays almost at the same place, but the peaks of its motion are relayed in the form of waves. This etude is a recreation of the Elica video "[Circular motion in wind generated waves](https://www.youtube.com/watch?v=NShUBfJQEHk)".
 <div style="clear:both;"></div>
