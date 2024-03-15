@@ -45,7 +45,7 @@
 		
 		var scene = new THREE.Scene();
 			scene.background = new THREE.Color( 0xF0F8FF );
-			scene.fog = new THREE.Fog( scene.background, 20, 25 );
+			//scene.fog = new THREE.Fog( scene.background, 20, 25 );
 
 		var camera = new THREE.PerspectiveCamera( 30, innerWidth/innerHeight );
 			camera.position.set( 0, 3, 20 );
@@ -166,7 +166,7 @@
 		// water/ice surface
 		
 		var water = new THREE.Mesh(
-				new THREE.CircleGeometry( 20, 50, 1 ),
+				new THREE.CircleGeometry( 5 ),
 				new THREE.MeshPhysicalMaterial({
 					color: azure,
 					bumpMap: waterTexture(),
@@ -222,7 +222,7 @@
 			);
 			faderFog.position.z = 8;
 			faderFog.rotation.x = -Math.PI/2;
-			scene.add( faderFog );
+			//scene.add( faderFog );
 		
 		
 		// animation loop
