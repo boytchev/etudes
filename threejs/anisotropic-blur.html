@@ -1,0 +1,264 @@
+﻿<!DOCTYPE html>
+
+<html>
+
+<head>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="stylesheet" href="../etudes.css">
+	<script type="importmap">
+	  {
+		"imports": {
+		  "three": "./161/three.module.min.js",
+		  "three/addons/": "./161/jsm/",
+		  "oops": "./161/oops/oops.js"
+		}
+	  }
+	</script>
+	<style>
+		#over {
+			position: absolute;
+			z-index: 100;
+			border: rgba(65,75,85,1) solid 2px;
+			border-radius: 14px;
+			top: 0;
+			left: 0;
+			box-shadow: 0px 0px 20px black;
+		}
+	</style>
+</head>
+
+
+	
+<body>
+	<h1 class="white">Anisotropic Blur <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+
+	<canvas id="main"></canvas>
+	<canvas id="over"></canvas>
+	
+	<script type="module">
+		import * as THREE from 'three';
+		import { TriangleBlurShader } from 'three/addons/shaders/TriangleBlurShader.js';
+		import { Effects } from 'oops';
+
+		var main = document.getElementById( 'main' );
+		var over = document.getElementById( 'over' );
+		
+		document.body.style.margin = 0;
+		document.body.style.overflow = 'hidden';
+//			document.body.appendChild( renderer.domElement );
+
+		// construct and setup the scene
+		
+		var renderer = new THREE.WebGLRenderer( {canvas: main, antialias: true} );
+			renderer.setSize( innerWidth, innerHeight );
+			renderer.setAnimationLoop( animationLoop );
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			//renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+		var width = innerWidth/4,
+			height = innerHeight/3;
+			
+		var renderer2 = new THREE.WebGLRenderer( {canvas: over, antialias: true} );
+			renderer2.setSize( width, height );
+			renderer2.shadowMap.enabled = true;
+			renderer2.shadowMap.type = THREE.PCFSoftShadowMap;
+			//renderer2.outputColorSpace = THREE.SRGBColorSpace;
+
+		var effects = new Effects( renderer2 )
+			.addEffect( TriangleBlurShader, {delta: new THREE.Vector2(0,0)} )
+			.addParameter( 'delta', new THREE.Vector2(0,0.2) )
+			.split()
+			.addEffect( TriangleBlurShader, {delta: new THREE.Vector2(0.2,0)} )
+			.split()
+			.addEffect( TriangleBlurShader, {delta: new THREE.Vector2(0.2,0)} )
+
+		over.style.left = (innerWidth/2 - width/2 - 1) + 'px';
+		over.style.top = (innerHeight/2 - height/2 - 1) + 'px';
+		
+		var scene = new THREE.Scene();
+			
+		var camera = new THREE.PerspectiveCamera( 30, innerWidth/innerHeight );
+			camera.position.set( 0, 0, 60 );
+
+		var camera2 = new THREE.PerspectiveCamera( 10.25, innerWidth/innerHeight );
+			camera2.position.set( 0, 0, 60 );
+
+		var light = new THREE.DirectionalLight( 'white', 2 );
+			light.position.set( 100, 100, 500 );
+			light.decay = 1;
+			light.castShadow = true;
+			light.shadow.mapSize.width = 512/4; // default
+			light.shadow.mapSize.height = 512/4; // default
+			scene.add( light );
+
+//		scene.add( new THREE.AmbientLight( 'white', 0 ) );
+		
+		// adjust to screen size
+		
+		window.addEventListener( "resize", (event) => {
+			width = innerWidth/4;
+			height = innerHeight/3;
+			camera.aspect = innerWidth/innerHeight;
+			camera.updateProjectionMatrix( );
+			renderer.setSize( innerWidth, innerHeight );
+			effects.setSize( width, height );
+		});	
+
+
+		var ground = new THREE.Mesh(
+				new THREE.PlaneGeometry( 300, 300 ),
+				new THREE.MeshLambertMaterial({
+					color: 0x203020
+				})
+			);
+			
+		ground.receiveShadow = true;
+		ground.position.z = -10;
+		scene.add( ground );
+
+		// pencils
+	
+		const PENCIL_LENGTH = 22;
+		const PENCIL_WIDTH = 0.5;
+		const TIP_LENGTH = 2.5;
+		const WOOD_LENGTH = 2;
+		
+		var colors = [ 'MediumSpringGreen', 'Red', 'Orange', 'LightSkyBlue', 'Yellow', 'DarkOrchid' ],
+			positions = [ [-3,0,-1],[-1,0,-1],[1,0,-1],[3,0,-1],[0,1,1],[0,-1,1] ],
+			angles = [0, 0, 0, 0, 90, 90];
+
+		class Pencil extends THREE.Group
+		{
+			constructor( position, angle, color )
+			{
+				super();
+				
+				var body = new THREE.Mesh(
+					new THREE.CylinderGeometry( PENCIL_WIDTH, PENCIL_WIDTH, PENCIL_LENGTH, 6 ),
+					new THREE.MeshStandardMaterial({
+						roughness: 1,
+						metalness: 0.3,
+						color: color,
+						flatShading: true,
+					})
+				);
+				
+				body.castShadow = true;
+				body.receiveShadow = true;
+				
+				var graphite = new THREE.Mesh(
+					new THREE.CylinderGeometry( PENCIL_WIDTH/6, PENCIL_WIDTH/2, TIP_LENGTH, 6 ),
+					new THREE.MeshStandardMaterial({
+						color: color,
+						flatShading: true,
+					})
+				);
+				
+				graphite.castShadow = true;
+				
+				var wood = new THREE.Mesh(
+					new THREE.CylinderGeometry( PENCIL_WIDTH/6, PENCIL_WIDTH, WOOD_LENGTH, 6 ),
+					new THREE.MeshStandardMaterial({
+						color: 'LemonChiffon',
+						flatShading: true,
+					})
+				);
+				
+				wood.castShadow = true;
+				wood.receiveShadow = true;
+				
+				var cap = new THREE.Mesh(
+					new THREE.SphereGeometry( PENCIL_WIDTH, 6, 12 ).rotateY( THREE.MathUtils.degToRad( 30 ) ).scale( 1, 0.5, 1 ),
+					new THREE.MeshStandardMaterial({
+						color: color,
+						flatShading: true,
+					})
+				);
+
+				graphite.position.y = PENCIL_LENGTH/2 + TIP_LENGTH/2;
+				wood.position.y = PENCIL_LENGTH/2 + WOOD_LENGTH/2;
+				cap.position.y = -PENCIL_LENGTH/2;
+				
+				this.add( body, graphite, wood, cap );
+				this.position.set( position[0], position[1], 2.5*PENCIL_WIDTH*position[2] );
+				this.rotation.set( 0, THREE.MathUtils.degToRad( 30 ), THREE.MathUtils.degToRad( angle ), 'ZYX' );
+			}
+		}
+
+			
+		for( var i=0; i<6; i++ )
+			scene.add( new Pencil( positions[i], angles[i], colors[i] ) );
+
+		
+		// animation loop
+		
+		var shiftX = -50,
+			shiftY = 0;
+		var angle = 0;
+		var startTime = -1
+		
+		function animationLoop( time )
+		{
+			if( startTime < 0 ) startTime = time;
+			
+			if( time-startTime<2000 )
+			{
+			}
+			else
+			if( time-startTime<3000 )
+			{
+				shiftX = -50*(0.5+0.5*Math.cos( (time-startTime-2000)/1000*Math.PI ))**4;
+				shiftY = -0*(0.5+0.5*Math.cos( (time-startTime-2000)/1000*Math.PI ))**4;
+			}
+			else
+			{
+			
+				shiftX = 0;
+				shiftY = 0;
+				angle = time/319;
+
+				angle = (angle + Math.sin(angle)**1)/4 + Math.PI/4;
+			}
+	
+	
+			var k = THREE.MathUtils.clamp(0.2-1*Math.cos(4*angle),0,1);
+			k = k**3;
+
+
+			var prev = Math.floor(angle/(Math.PI/2))*Math.PI/2 + 0.2,
+				next = prev+Math.PI/2 - 0.4,
+				pos = THREE.MathUtils.clamp(((angle-prev)/(next-prev)),0,1);
+				
+			pos = Math.cos(Math.PI*pos);
+			pos = 0.5-0.5*(pos);
+				
+			var midAngle = prev + Math.PI/2*pos-0.2;
+			
+			camera2.up.set( Math.sin(midAngle), Math.cos(midAngle), 0 );
+			camera2.position.set( shiftX, shiftY, 60 );
+			camera2.lookAt( shiftX, shiftY, 0 );
+
+						
+			over.style.transform = `rotate(${midAngle}rad)`;
+			
+			effects.delta.y = 0.005+0.1*(k**0.1);
+			
+			var k2 = 1 + 0.3*(k**0.25);
+			over.style.width = (width * k2) + 'px';
+			over.style.height = (height * k2) + 'px';
+			over.style.left = (innerWidth/2 - width/2*k2 - 1.5 + 23*shiftX) + 'px';
+			over.style.top = (innerHeight/2 - height/2*k2 - 1.25 - 23*shiftY) + 'px';
+			
+			effects.render( scene, camera2 );
+			renderer.render( scene, camera );
+			
+		} // animationLoop
+		
+	</script>
+	
+</body>
+
+</html>
+
+
