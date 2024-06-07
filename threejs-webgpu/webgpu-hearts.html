@@ -78,7 +78,7 @@
 			// the texture
 			
 			var width = 1024,
-				height = 1024,
+				height = 512,
 				storageTexture = new StorageTexture( width, height );
 
 
@@ -115,7 +115,7 @@
 				var y = sub(yPI,yPIF,-0.5).mul(ss); // y = ss*(y/PI - floor(y/PI) - 0.5);
 
 				// k = pow(x*x+y*y-1.0,3.0)-x*x*y*y*y; // heart curve 1
-				var k = sub( pow(add(pow(x,2),pow(y,2),-1),3), mul(pow(x,2),pow(y,3)) );
+				var k = sub( pow(abs(add(mul(x,x),mul(y,y),-1)),3), mul(x,x,y,y,y) );
 				
 				// k = pow(abs(k*sin(uT/5.0)),0.5)*cos(uT/3.5);
 				k = mul( pow(abs(mul(sin(div(uT,5)),k)),0.5), cos(div(uT,3.5)) );
@@ -124,7 +124,7 @@
 				var z1 = add(0.5, mul(1.5,k,sin(xs),sin(ys)));
 
 				//k = pow(x*x+y*y-1.0,3.0)+x*x*y*y*y; // heart curve 2
-				k = add( pow(add(pow(x,2),pow(y,2),-1),3), mul(pow(x,2),pow(y,3)) );
+				k = add( pow(abs(add(mul(x,x),mul(y,y),-1)),3), mul(x,x,y,y,y) );
 
 				//k = pow(abs(k*cos(uT/5.0)),0.25)*sin(uT/2.5);
 				k = mul( pow(abs(mul(cos(div(uT,5)),k)),0.25), sin(div(uT,2.5)) );
@@ -133,9 +133,9 @@
 				var z2 = sub(0.5,mul(1.5,k,sin(xs),sin(ys)));
 								
 				var z = min(z1,z2); //float z = min(z1,z2);	
-	
+
 				// gl_FragColor = vec4(1.0-z*z,-z,0.5-z,1);
-				var r = sub(float(1),z.pow(2));
+				var r = sub(float(1),z.mul(z));
 				var g = sub(float(0),z);
 				var b = sub(float(0.5),z);
 
