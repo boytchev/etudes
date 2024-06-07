@@ -85,56 +85,63 @@
 			// global variables (uniforms)
 			
 			var uT = uniform( 0 ); // time
-			var uSx = uniform( innerWidth / 40 ); // horizontal scale
-			var uSy = uniform( innerHeight / 40 ); // vertical scale
+			var uSx = uniform( innerWidth / 58 ); // horizontal scale
+			var uSy = uniform( innerHeight / 58 ); // vertical scale
 
 			// exture computing function
 
 			var computeTexture = tslFn( ( { storageTexture } ) => {
 			
+				// texel coordinates
+				
 				var posX = instanceIndex.remainder( width );
 				var posY = instanceIndex.div( width );
 
 				var indexUV = uvec2( posX, posY );
 
-				var vXY = vec2( float(posX).div(width).sub(0.5), float(posY).div(height).sub(0.5) );
+				var vXY = vec2( float(posX).div(width), float(posY).div(height) );
 				
-				var xs = mul( uSx, vXY.x ); // float x = uSx*vXY.x;
-				var ys = mul( uSy, vXY.y ); // float y = uSy*vXY.y;
+				var xs = mul( uSx, vXY.x );
+				var ys = mul( uSy, vXY.y );
 
-				var xPI = xs.div(Math.PI); // x/PI
-				var yPI = ys.div(Math.PI); // y/PI
+				var xPI = xs.div(Math.PI);
+				var yPI = ys.div(Math.PI);
 				
-				var xPIF = floor(xPI); // x/PI
-				var yPIF = floor(yPI); // y/PI
+				var xPIF = floor(xPI);
+				var yPIF = floor(yPI);
 				
-				//float ss = 3.0+1.0*sin(uT+2.0*floor(x/PI)+3.0*floor(y/PI));
-				var ss = add(3, sin(add(uT,mul(2,xPIF),mul(3,yPIF))));
+				// pulsating factor
 
-				var x = sub(xPI,xPIF,-0.5).mul(ss); // x = ss*(x/PI - floor(x/PI) - 0.5);
-				var y = sub(yPI,yPIF,-0.5).mul(ss); // y = ss*(y/PI - floor(y/PI) - 0.5);
+				var ss = add(3, sin(add(uT,mul(3,xPIF),mul(5,yPIF))), cos(add(uT,mul(4,xPIF),mul(1.5,yPIF))));
 
-				// k = pow(x*x+y*y-1.0,3.0)-x*x*y*y*y; // heart curve 1
-				var k = sub( pow(abs(add(mul(x,x),mul(y,y),-1)),3), mul(x,x,y,y,y) );
+				// local coordinates within a cell
 				
-				// k = pow(abs(k*sin(uT/5.0)),0.5)*cos(uT/3.5);
-				k = mul( pow(abs(mul(sin(div(uT,5)),k)),0.5), cos(div(uT,3.5)) );
+				var x = sub(xPI,xPIF).sub(0.5).mul(ss);
+				var y = sub(yPI,yPIF).sub(0.5).mul(ss);
+
+				// common core for both curves
 				
-				// z1 = 0.5+1.5*k*sin(uSx*vXY.x)*sin(uSy*vXY.y);
+				var core = add(mul(x,x),mul(y,y),-1);
+					core = mul(core,core,core);
+				
+				// heart curve 1
+
+				var k = sub( core, mul(x,x,y,y,y) );
+					k = mul( pow(abs(mul(sin(div(uT,5)),k)),0.5), cos(div(uT,3.5)) );
 				var z1 = add(0.5, mul(1.5,k,sin(xs),sin(ys)));
 
-				//k = pow(x*x+y*y-1.0,3.0)+x*x*y*y*y; // heart curve 2
-				k = add( pow(abs(add(mul(x,x),mul(y,y),-1)),3), mul(x,x,y,y,y) );
-
-				//k = pow(abs(k*cos(uT/5.0)),0.25)*sin(uT/2.5);
-				k = mul( pow(abs(mul(cos(div(uT,5)),k)),0.25), sin(div(uT,2.5)) );
+				// heart curve 12
 				
-				//float z2 = 0.5-1.5*k*sin(uSx*vXY.x)*sin(uSy*vXY.y);
+				k = add( core, mul(x,x,y,y,y) );
+				k = mul( pow(abs(mul(cos(div(uT,5)),k)),0.25), sin(div(uT,2.5)) );
 				var z2 = sub(0.5,mul(1.5,k,sin(xs),sin(ys)));
 								
-				var z = min(z1,z2); //float z = min(z1,z2);	
+				// combine both curves
+				
+				var z = min(z1,z2);
 
-				// gl_FragColor = vec4(1.0-z*z,-z,0.5-z,1);
+				// map result into a color
+				
 				var r = sub(float(1),z.mul(z));
 				var g = sub(float(0),z);
 				var b = sub(float(0.5),z);
@@ -161,15 +168,15 @@
 
 				renderer.setSize( innerWidth, innerHeight );
 
-				camera.left = -innerWidth/2;
-				camera.right = innerWidth/2;
-				camera.top = innerHeight/2;
-				camera.bottom = -innerHeight/2;
+				camera.left = -innerWidth / 2;
+				camera.right = innerWidth / 2;
+				camera.top = innerHeight / 2;
+				camera.bottom = -innerHeight / 2;
 
 				camera.updateProjectionMatrix();
 
-				uSx.value = innerWidth/40;
-				uSy.value = innerHeight/40;
+				uSx.value = innerWidth / 58;
+				uSy.value = innerHeight / 58;
 
 				plane.scale.set(innerWidth , innerHeight,1);
 			}
