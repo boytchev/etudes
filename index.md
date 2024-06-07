@@ -2,7 +2,7 @@ This is a repository for the source code of various 3D programlets.
 
 
 ### 39. [WebGPU Hearts [Three.js+TSL+WebGPU]](threejs-webgpu/webgpu-hearts.html)
-<a href="threejs-webgpu/webgpu-hearts.html"><img src="snapshots/webgpu-hearts.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> This etude is a WebGPU reimplementation of the WebGL-based Etude №2. It is written in TSL &ndash; Three.js Shading Language.
+<a href="threejs-webgpu/webgpu-hearts.html"><img src="snapshots/webgpu-hearts.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> This etude is a WebGPU reimplementation of the WebGL-based Etude №2. It is written in TSL &ndash; Three.js Shading Language. You need a browser with WebGPU support to run this etude.
 <div style="clear:both;"></div>
 
 
