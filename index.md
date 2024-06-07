@@ -1,6 +1,12 @@
 This is a repository for the source code of various 3D programlets.
 
 
+### 39. [WebGPU Hearts [Three.js+TSL+WebGPU]](threejs-webgpu/webgpu-hearts.html)
+<a href="threejs-webgpu/webgpu-hearts.html"><img src="snapshots/webgpu-hearts.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> This etude is a WebGPU reimplementation of the WebGL-based Etude №2. It is written in TSL &ndash; Three.js Shading Language.
+<div style="clear:both;"></div>
+
+
+
 ### 38. [Anisotropic blur [Three.js]](threejs/anisotropic-blur.html)
 <a href="threejs/anisotropic-blur.html"><img src="snapshots/anisotropic-blur.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> This etude is recreation of this [animation](https://imgur.com/gallery/s8VVTiM). Anisotropic blur appears only aling a specific direction. This makes it possible to apply the blur simiar to how polarized filters are used to remove reflections. 
 <div style="clear:both;"></div>

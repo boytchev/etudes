@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<head>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="stylesheet" href="../etudes.css">
+		<style>
+			h1, h3 {
+				text-shadow: 1px 0px 3px white, -1px 0px 3px white;
+			}
+		</style>
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://cdn.jsdelivr.net/npm/three@0.164.0/build/three.module.js",
+					"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.0/examples/jsm/",
+					"three/nodes": "https://cdn.jsdelivr.net/npm/three@0.164.0/examples/jsm/nodes/Nodes.js"
+				}
+			}
+		</script>
+	</head>
+	<body>
+	<h1>WebGPU Hearts <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+	<h3 id="info">This etude requires WebGPU support in this browser</h3>
+	
+		<script type="module">
+
+			// import, import, import, import and one more import
+			
+			import { OrthographicCamera, Scene, Mesh, PlaneGeometry } from 'three';
+			import { texture, textureStore, tslFn, instanceIndex, float, uvec2,
+					 vec4, vec2, MeshBasicNodeMaterial, min, sub, mul, pow, add,
+					 abs, sin, cos, div, uniform, floor } from 'three/nodes';
+			import WebGPU from 'three/addons/capabilities/WebGPU.js';
+			import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+			import StorageTexture from 'three/addons/renderers/common/StorageTexture.js';
+
+
+			// hide the subtitle if it is not needed
+			
+			if ( WebGPU.isAvailable() === true ) {
+
+				document.getElementById('info').innerHTML = '';
+
+			}
+
+
+			// set up the scene
+			
+			var renderer = new WebGPURenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( innerWidth, innerHeight );
+				
+			document.body.appendChild( renderer.domElement );
+
+			var camera = new OrthographicCamera( -innerWidth/2, innerWidth/2, innerHeight/2, -innerHeight/2, 0, 2 );
+				camera.position.z = 1;
+
+			var scene = new Scene();
+			
+			
+			// create a plane covering the whole window
+			
+			var plane = new Mesh(
+					new PlaneGeometry( 1, 1 ),
+					new MeshBasicNodeMaterial( )
+				);
+				
+			plane.scale.set(innerWidth , innerHeight,1);
+			scene.add( plane );
+
+
+			// Three.js Shader Language magic goes here.
+			// Honestly, I do not understand most of the things.
+			// After 8 hours of hard work it miraculously worked.
+			// So, not touching it until I learn more about TSL.
+			
+			
+			// the texture
+			
+			var width = 1024,
+				height = 1024,
+				storageTexture = new StorageTexture( width, height );
+
+
+			// global variables (uniforms)
+			
+			var uT = uniform( 0 ); // time
+			var uSx = uniform( innerWidth / 40 ); // horizontal scale
+			var uSy = uniform( innerHeight / 40 ); // vertical scale
+
+			// exture computing function
+
+			var computeTexture = tslFn( ( { storageTexture } ) => {
+			
+				var posX = instanceIndex.remainder( width );
+				var posY = instanceIndex.div( width );
+
+				var indexUV = uvec2( posX, posY );
+
+				var vXY = vec2( float(posX).div(width).sub(0.5), float(posY).div(height).sub(0.5) );
+				
+				var xs = mul( uSx, vXY.x ); // float x = uSx*vXY.x;
+				var ys = mul( uSy, vXY.y ); // float y = uSy*vXY.y;
+
+				var xPI = xs.div(Math.PI); // x/PI
+				var yPI = ys.div(Math.PI); // y/PI
+				
+				var xPIF = floor(xPI); // x/PI
+				var yPIF = floor(yPI); // y/PI
+				
+				//float ss = 3.0+1.0*sin(uT+2.0*floor(x/PI)+3.0*floor(y/PI));
+				var ss = add(3, sin(add(uT,mul(2,xPIF),mul(3,yPIF))));
+
+				var x = sub(xPI,xPIF,-0.5).mul(ss); // x = ss*(x/PI - floor(x/PI) - 0.5);
+				var y = sub(yPI,yPIF,-0.5).mul(ss); // y = ss*(y/PI - floor(y/PI) - 0.5);
+
+				// k = pow(x*x+y*y-1.0,3.0)-x*x*y*y*y; // heart curve 1
+				var k = sub( pow(add(pow(x,2),pow(y,2),-1),3), mul(pow(x,2),pow(y,3)) );
+				
+				// k = pow(abs(k*sin(uT/5.0)),0.5)*cos(uT/3.5);
+				k = mul( pow(abs(mul(sin(div(uT,5)),k)),0.5), cos(div(uT,3.5)) );
+				
+				// z1 = 0.5+1.5*k*sin(uSx*vXY.x)*sin(uSy*vXY.y);
+				var z1 = add(0.5, mul(1.5,k,sin(xs),sin(ys)));
+
+				//k = pow(x*x+y*y-1.0,3.0)+x*x*y*y*y; // heart curve 2
+				k = add( pow(add(pow(x,2),pow(y,2),-1),3), mul(pow(x,2),pow(y,3)) );
+
+				//k = pow(abs(k*cos(uT/5.0)),0.25)*sin(uT/2.5);
+				k = mul( pow(abs(mul(cos(div(uT,5)),k)),0.25), sin(div(uT,2.5)) );
+				
+				//float z2 = 0.5-1.5*k*sin(uSx*vXY.x)*sin(uSy*vXY.y);
+				var z2 = sub(0.5,mul(1.5,k,sin(xs),sin(ys)));
+								
+				var z = min(z1,z2); //float z = min(z1,z2);	
+	
+				// gl_FragColor = vec4(1.0-z*z,-z,0.5-z,1);
+				var r = sub(float(1),z.pow(2));
+				var g = sub(float(0),z);
+				var b = sub(float(0.5),z);
+
+				textureStore( storageTexture, indexUV, vec4( r, g, b, 1 ) );
+
+			} ); // computeTexture
+			
+			
+			// install the material and generate the texture
+
+			var computeNode = computeTexture( { storageTexture } ).compute( width * height );
+
+			plane.material.colorNode = texture( storageTexture );
+
+			renderer.compute( computeNode );
+
+
+			// manage window resizes to keep hearts the same size
+			
+			window.addEventListener( 'resize', onWindowResize );
+			
+			function onWindowResize() {
+
+				renderer.setSize( innerWidth, innerHeight );
+
+				camera.left = -innerWidth/2;
+				camera.right = innerWidth/2;
+				camera.top = innerHeight/2;
+				camera.bottom = -innerHeight/2;
+
+				camera.updateProjectionMatrix();
+
+				uSx.value = innerWidth/40;
+				uSy.value = innerHeight/40;
+
+				plane.scale.set(innerWidth , innerHeight,1);
+			}
+
+
+			// finally, the animation loop
+			
+			function animationLoop(t) {
+
+				uT.value = t/300;
+				renderer.compute( computeNode );
+				renderer.renderAsync( scene, camera );
+
+			}
+
+			renderer.setAnimationLoop( animationLoop );
+						
+		</script>
+	</body>
+</html>
