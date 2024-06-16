@@ -1,0 +1,302 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+		<link rel="stylesheet" href="../etudes.css">
+
+		<style>
+			.hud {
+				z-index: 100;
+				position: absolute;
+				width: 8em;
+				height: 8em;
+				border-radius: 0.1em;
+				display: none;
+			}
+			
+			#blurry {
+				bottom: 1em;
+				right: 1em;
+			}
+
+			#foggy {
+				filter: invert(100%);
+				bottom: 1em;
+				left: 1em;
+			}
+		</style>
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+					"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+				}
+			}
+		</script>
+		
+	</head>
+	
+	<body>
+		<h1 class="white">Fog shadow <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		
+		<canvas id="foggy" class="hud" ></canvas>
+		<canvas id="blurry" class="hud" ></canvas>
+		
+		<script type="module">
+			import * as THREE from 'three';
+			import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+			import { ThreeMFLoader } from 'three/addons/loaders/3MFLoader.js';
+			import * as lil from "three/addons/libs/lil-gui.module.min.js";
+			
+			
+			// Textures from https://3dtextures.me
+			// All textures on this site are licensed as CC0.
+
+
+			// there Orthographic camera and fogs hate each other, so I have to
+			// use PerspectiveCamera, which is far away, so it is like ortho...
+			
+			const FOG_CAMERA_DISTANCE = 1200;
+			
+			
+			
+			// construct and setup the scene
+			
+			var renderer = new THREE.WebGLRenderer( {antialias:true} );
+				renderer.setAnimationLoop( animate );
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+
+			var scene = new THREE.Scene();
+				scene.background = new THREE.Color( 'black' );
+
+			var camera = new THREE.PerspectiveCamera( 30, 1, 1, 2000 );
+				camera.position.set( 0, 90, 240 );
+				camera.lookAt( scene.position );
+			
+
+
+			// user interactivity
+			
+			var controls = new OrbitControls( camera, renderer.domElement );
+				controls.enableDamping = true;
+				controls.enablePanning = false;
+
+			var params = { blur: 30, contrast: 0, resolution: 512, reduce: false, show: false  };
+			var gui = new lil.GUI( {title: 'Fog shadow controls'} );
+				gui.add( params, 'blur' ).min( 0 ).max( 100 ).step(1).name('Blur');
+				gui.add( params, 'contrast' ).min( -100 ).max( 100 ).step(1).name('Contrast');
+				gui.add( params, 'resolution', {
+					'32 &times; 32':32,
+					'64 &times; 64':64,
+					'128 &times; 128':128,
+					'256 &times; 256':256,
+					'512 &times; 512':512,
+					'1024 &times; 1024':1024,
+				} ).onChange( changeResolution ).name('Resolution');
+				gui.add( params, 'reduce' ).name('Reduce motion');
+				gui.add( params, 'show' ).onChange(showBuffers).name('Show buffers');
+			
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+			
+			function onWindowResize( event )
+			{
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight, true );
+			}			
+
+
+			// lights
+			
+			var spotLight = new THREE.SpotLight('white',3,0,1.0,1.0);
+				spotLight.decay = 0;
+				spotLight.position.set( 0, 150, 0 );
+
+			scene.add( spotLight );
+			
+			scene.add( new THREE.AmbientLight( 'tan', 0.1 ) );
+
+
+			// helper function to load a texture
+			
+			function texture( url, scalex, scaley )
+			{
+				var map = new THREE.TextureLoader().load( 'rolling-ball/'+url );
+				
+				map.repeat.set( scalex, scaley );
+				
+				map.wrapS = THREE.RepeatWrapping;
+				map.wrapT = THREE.RepeatWrapping;
+				map.anisotropy = renderer.capabilities.maxAnisotropy;
+				
+				return map;
+			}
+
+
+			// ground
+			
+			var ground = new THREE.Mesh(
+					new THREE.PlaneGeometry( 1000, 1000 ),
+					new THREE.MeshPhysicalMaterial( {color: 'white',
+						roughness: 0.4,
+						metalness: 0.3,
+						map: texture( 'Concrete_Wall_007_basecolor.jpg', 20, 20 ),
+						normalMap: texture( 'Concrete_Wall_007_normal.jpg', 20, 20 ),
+						normalScale: new THREE.Vector2(1,1),
+					} )
+				);
+				ground.rotation.x = -Math.PI/2;
+
+			var border = new THREE.Mesh(
+					new THREE.TorusGeometry( 110, 5, 8, 4 ),
+					new THREE.MeshPhysicalMaterial( {
+						color: 'dimgray',
+						metalness: 0.8,
+						roughness: 0.1
+					} )
+				);
+				border.rotation.set( Math.PI/2, Math.PI/4, 0, 'YXZ' );
+				border.scale.z = 0.2;
+
+			scene.add( ground, border );
+
+
+			// objects - the ball, the knot and the bar and the bulldozer
+			
+			var ball = new THREE.Mesh(
+					new THREE.SphereGeometry( 15 ),
+					new THREE.MeshLambertMaterial( {color: 'white' })
+				);
+				ball.position.set( 50, 0, 50 );
+
+			var knot = new THREE.Mesh(
+					new THREE.TorusKnotGeometry( 10, 3, 100, 16 ),
+					new THREE.MeshPhysicalMaterial( {
+						color: 'tomato',
+						metalness: 0.3,
+						roughness: 0
+					})
+				);
+				knot.position.set( -50, 20, 50 );
+			
+			var bar = new THREE.Mesh(
+					new THREE.BoxGeometry( 100, 4, 25 ),
+					new THREE.MeshLambertMaterial( {color: 'teal'} )
+				);
+				bar.position.set( 0, 30, -50 );
+			
+			var bulldozer = new THREE.Group();
+				bulldozer.position.y = 20;
+			
+			new ThreeMFLoader( ).load( 'capping-clipping/truck.3mf', (object)=>{
+				object.position.set( 0, -20, -40 );
+				object.scale.set( 2,2,2 );
+				bulldozer.add( object );
+			} );
+			
+			scene.add( ball, knot, bar, bulldozer );
+
+
+			// here starts the fog shadow magic
+
+			// remember canvases
+			
+			var foggy = document.getElementById('foggy'),
+				blurry = document.getElementById('blurry'),
+				blurryContext = blurry.getContext('2d');
+			
+			foggy.width = foggy.height = blurry.width = blurry.height = params.resolution;
+			
+			function changeResolution( )
+			{
+				foggy.width = foggy.height = blurry.width = blurry.height = params.resolution;
+				fogground.material.map = new THREE.CanvasTexture( blurry );
+				fogrenderer.setSize( params.resolution, params.resolution );
+				foggy.style.width = '8em';
+				foggy.style.height = '8em';
+			}
+			
+			function showBuffers( )
+			{
+				foggy.style.display = params.show ? 'block' : 'none';
+				blurry.style.display = params.show ? 'block' : 'none';
+			}
+			
+			var fogrenderer = new THREE.WebGLRenderer( {antialias: true, canvas: foggy} );
+			
+			var fog = new THREE.Fog(
+					'black',
+					FOG_CAMERA_DISTANCE+20,
+					FOG_CAMERA_DISTANCE+100
+				);
+
+			var fogcamera = new THREE.PerspectiveCamera( 1, 1, FOG_CAMERA_DISTANCE+0.01, FOG_CAMERA_DISTANCE+100 );
+				fogcamera.position.set( 0, -FOG_CAMERA_DISTANCE, 0 );
+				fogcamera.scale.y *= -1; // flip depth
+				fogcamera.lookAt( 0, 1, 0 );
+				fogcamera.zoom = 0.13;
+				fogcamera.updateProjectionMatrix()
+			
+			var fogmaterial = new THREE.MeshBasicMaterial( );
+
+			var fogground = new THREE.Mesh(
+					new THREE.PlaneGeometry( 160, 160 ),
+					new THREE.MeshBasicMaterial( {
+						map: new THREE.CanvasTexture( blurry ),
+						polygonOffset: true,
+						polygonOffsetFactor: -1,
+						polygonOffsetUnits: -1,
+						blending: THREE.MultiplyBlending,
+						transparent: true,
+					} )
+				);
+				fogground.rotation.x = -Math.PI/2;
+				scene.add( fogground );
+				
+					
+			// animation loop
+			
+			function animate( t )
+			{
+
+				controls.update( )
+				
+				// move objects
+
+				bar.rotation.z = 0.5*(params.reduce?1:Math.sin(t/500));
+				ball.position.x = 40+15*Math.cos((params.reduce?t/1200:t/600));
+				ball.position.y = 15+Math.abs(Math.sin(t/600))*(params.reduce?0:30);
+				knot.rotation.set( (params.reduce?1:Math.sin(t/500)), (params.reduce?Math.sin(t/1700):Math.sin(t/700)), (params.reduce?1:Math.sin(t/1100)) );
+				bulldozer.rotation.set( -Math.PI/2, t*(params.reduce?0:1/765), t*(params.reduce?1/5000:1/1000) );
+				bulldozer.position.y = params.reduce?16.5:24;
+
+				// extract fog shadow
+				
+				scene.overrideMaterial = fogmaterial;
+				scene.fog = fog;
+				fogrenderer.render( scene, fogcamera );
+
+				blurryContext.filter = `blur(${params.resolution/1024*params.blur}px) invert(100%) contrast(${params.contrast+100}%)`;
+				blurryContext.drawImage( fogrenderer.domElement,0,0);
+
+				fogground.material.map.needsUpdate = true;
+
+				// normal render
+				
+				scene.overrideMaterial = null;
+				scene.fog = null;
+				renderer.render( scene, camera );				
+			}
+			
+		</script>
+	</body>
+</html>
+
+
