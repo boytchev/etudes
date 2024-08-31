@@ -2,7 +2,7 @@ This is a repository for the source code of various 3D programlets.
 
 
 ### 41. [Flipped Earth [Three.js]](threejs-webgpu/flipped-earth.html)
-<a href="threejs-webgpu/flipped-earth.html"><img src="snapshots/flipped-earth.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Displacement maps make it easy to generate a flipped Earth &dash; i.e. continents become oceans and oceans become continents (and also to experiment with different sea levels). You only need an accurate elevation and bathymetric map.
+<a href="threejs-webgpu/flipped-earth.html"><img src="snapshots/flipped-earth.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Displacement maps make it easy to generate a flipped Earth &ndash; i.e. continents become oceans and oceans become continents. It is also easy to experiment with different sea levels. You only need an accurate elevation and [bathymetric map](https://en.wikipedia.org/wiki/Bathymetry).
 <div style="clear:both;"></div>
 
 
