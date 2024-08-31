@@ -1,0 +1,195 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+		<link rel="stylesheet" href="../etudes.css">
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.webgpu.js",
+					"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.168.0/examples/jsm/"
+				}
+			}
+		</script>
+		
+	</head>
+	
+	<body>
+		<h1 class="white">Flipped Earth <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		
+		<script type="module">
+			// Texture from https://commons.wikimedia.org/wiki/File:World_elevation_map.png
+
+			const WATER_LEVEL = 0.5625/2;
+
+			import * as THREE from 'three';
+			import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+			import * as lil from "three/addons/libs/lil-gui.module.min.js";
+			
+			var params = {
+					waterLevel: 0,
+					flipEarth: false
+				};
+				
+			var tslParams = {
+					level: THREE.uniform(0.25),
+					colorA: new THREE.Color(0xa08060),
+					colorB: new THREE.Color(0x4060a0),
+				};
+			
+			// construct and setup the scene
+			var gui = new lil.GUI( {title: 'Earth control'} );
+				gui.add( params, 'waterLevel' ).min( -100 ).max( 100 ).step(1).name('Water level (%)').onChange(onChange);
+				gui.add( params, 'flipEarth' ).name('Flip land &harr; sea').onChange(onChange);
+			
+			var renderer = new THREE.WebGPURenderer( {antialias:true, logarithmicDepthBuffer: !true} );
+				renderer.setAnimationLoop( animate );
+				renderer.shadowMap.type = THREE.PCFShadowMap;
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+
+			var scene = new THREE.Scene();
+				scene.background = new THREE.Color( 'black' );
+
+			var camera = new THREE.PerspectiveCamera( 5, 1, 200, 400 );
+				camera.position.set( 0, 0, 300 );
+				camera.lookAt( scene.position );
+			
+			var light = new THREE.SpotLight('white',0.8);
+				light.decay = 0;
+				light.angle = 0.04;
+				light.penumbra = 1;
+			scene.add( light );
+
+			var controls = new OrbitControls( camera, renderer.domElement );
+				controls.enableDamping = true;
+				controls.enableZoom = false;
+				controls.enablePan = false;
+
+
+			var recolor = THREE.Fn( ( params )=>{
+
+				var dist = THREE.positionLocal.length().sub(10).toVar( );
+				//dist=[0,level,0.5]
+
+				var color = THREE.vec3( 0 ).toVar( );
+
+				THREE.If( dist.greaterThanEqual( params.level ), () => {
+					// land
+					var k = dist.sub(params.level).div(THREE.float(0.5).sub(params.level)); // k=[0,1]
+					color.assign( THREE.mix(params.colorA,THREE.vec3(2,1.5,1),k.mul(3).add(0.5)) );
+				}).Else( () => {
+					// water
+					var k = dist.div(params.level).pow(0.5); // k=[0,1]
+					
+					color.assign( THREE.mix(THREE.vec3(0,0,0),params.colorB,k).add(THREE.vec3(0,0.2,0.6)) );
+				});
+
+				return color;
+
+			} ); // recolor
+
+
+			// construct the Earth
+			
+			var map = new THREE.TextureLoader().load( 'flipped-earth/World_elevation_map.jpg' );
+			
+			var earth = new THREE.Mesh(
+					new THREE.IcosahedronGeometry( 10, 150 ),
+					new THREE.MeshPhysicalNodeMaterial( {
+						bumpMap: map,
+						bumpScale: 10,
+						displacementMap: map,
+						displacementBias: 0,
+						displacementScale: 0.5,
+						roughness: 0.8,
+						metalness: 0.2,
+					} )
+				);
+				scene.add( earth );
+			earth.material.colorNode = recolor ( tslParams );
+
+			var water = new THREE.Mesh(
+					earth.geometry,
+					new THREE.MeshPhysicalMaterial( {
+						roughness: 0.4,
+						metalness: 0.5,
+						color: 0x0080ff,
+						transparent: true,
+						opacity: 0.6,
+						polygonOffset: true,
+						polygonOffsetUnits: 0,
+						polygonOffsetFactor: 0,
+						bumpMap: new THREE.TextureLoader().load( 'flipped-earth/waves.jpg' ),
+						bumpScale: -0.1,
+					} )
+				);
+			var water1 = water.clone();
+			var water2 = water.clone();
+			var water3 = water.clone();
+			scene.add( water, water1)//, water2, water3 );
+						
+			// maintain full screen
+			
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+			
+			function onWindowResize( event )
+			{
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight, true );
+			}			
+
+
+
+			function onChange()
+			{
+				var waterLevel;
+				
+				if( params.flipEarth )
+				{
+					waterLevel = -params.waterLevel;
+					if( waterLevel<0 )
+						waterLevel = THREE.MathUtils.mapLinear(waterLevel,-100,0,0,(0.5-WATER_LEVEL));
+					else
+						waterLevel = THREE.MathUtils.mapLinear(waterLevel,0,100,(0.5-WATER_LEVEL),0.5);
+					earth.material.displacementBias = 0.5;
+					earth.material.displacementScale = -0.5;
+				}
+				else
+				{
+					waterLevel = params.waterLevel;
+					if( waterLevel<0 )
+						waterLevel = THREE.MathUtils.mapLinear(waterLevel,-100,0,0,WATER_LEVEL);
+					else
+						waterLevel = THREE.MathUtils.mapLinear(waterLevel,0,100,WATER_LEVEL,0.5);
+					earth.material.displacementBias = 0;
+					earth.material.displacementScale = 0.5;
+				}
+				tslParams.level.value = waterLevel;
+				earth.material.needsUpdate = true;
+				water.scale.setScalar( 1+waterLevel/10 );
+			}
+			onChange();
+			
+			
+			// animation loop
+			function animate( t )
+			{
+				controls.update( );
+				light.position.copy( camera.position );
+				
+				renderer.renderAsync( scene, camera );
+			}
+			
+		</script>
+	</body>
+</html>
+
+

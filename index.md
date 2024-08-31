@@ -1,6 +1,11 @@
 This is a repository for the source code of various 3D programlets.
 
 
+### 41. [Flipped Earth [Three.js]](threejs-webgpu/flipped-earth.html)
+<a href="threejs-webgpu/flipped-earth.html"><img src="snapshots/flipped-earth.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> Displacement maps make it easy to generate a flipped Earth &dash; i.e. continents become oceans and oceans become continents (and also to experiment with different sea levels). You only need an accurate elevation and bathymetric map.
+<div style="clear:both;"></div>
+
+
 ### 40. [Fog shadow [Three.js]](threejs/fog-shadow.html)
 <a href="threejs/fog-shadow.html"><img src="snapshots/fog-shadow.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> A soft (or hard) shadow could be created with a fog. A scene is rendered on small canvas using only black material and a fog. The image is blurred and used as a light map in the main scene. This is not universal solution, but it could be useful in some cases.
 <div style="clear:both;"></div>
