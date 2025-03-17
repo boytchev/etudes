@@ -2,7 +2,7 @@ This is a repository for the source code of various 3D programlets.
 
 
 ### 42. [Wreath braiding [Three.js]](threejs/wreath-braiding.html)
-<a href="threejs/wreath-braiding.html"><img src="snapshots/wreath-braiding.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> How to model wreath braiding similar to [this animation](https://imgur.com/gallery/some-eye-candy-3hkoAwL) (hoping it is still online)? Circular threads get distorted by simplex noise. Distortion affects both radius and angle of a vertex's polar coordinates. The rest is just some posteffects.
+<a href="threejs/wreath-braiding.html"><img src="snapshots/wreath-braiding.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> How to model wreath braiding similar to [this animation](https://imgur.com/gallery/some-eye-candy-3hkoAwL) (hoping it is still online)? Circular threads get distorted by a simplex noise. Distortion affects both the radius and the angle of a vertex's polar coordinates. The rest is just some posteffect.
 <div style="clear:both;"></div>
 
 
