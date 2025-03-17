@@ -1,0 +1,181 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+		<link rel="stylesheet" href="../etudes.css">
+
+		<style>
+			.hud {
+				z-index: 100;
+				position: absolute;
+				width: 8em;
+				height: 8em;
+				border-radius: 0.1em;
+				display: none;
+			}
+			
+			#blurry {
+				bottom: 1em;
+				right: 1em;
+			}
+
+			#foggy {
+				filter: invert(100%);
+				bottom: 1em;
+				left: 1em;
+			}
+		</style>
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://cdn.jsdelivr.net/npm/three@0.174.0/build/three.module.js",
+					"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.174.0/examples/jsm/"
+				}
+			}
+		</script>
+		
+	</head>
+	
+	<body>
+		<h1 class="white">Wreath braiding <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+		
+		<script type="module">
+		
+			import * as THREE from 'three';
+			import { SimplexNoise } from "three/addons/math/SimplexNoise.js";
+
+			import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+			import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+			import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+			import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+			import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+			import { BrightnessContrastShader } from 'three/addons/shaders/BrightnessContrastShader.js';
+
+
+			
+			// construct and setup the scene
+			
+			var renderer = new THREE.WebGLRenderer( {antialias:true} );
+				renderer.toneMapping = THREE.ACESFilmicToneMapping;
+				renderer.toneMappingExposure = 0.25;
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+
+			var scene = new THREE.Scene();
+				scene.background = new THREE.Color( 'saddlebrown' );
+
+			var camera = new THREE.PerspectiveCamera( 50, 1, 1, 100 );
+				camera.position.set( 0, 0, 20 );
+				camera.lookAt( scene.position );
+			
+
+			
+			// postprocessing
+			
+			var extraPass = new ShaderPass( BrightnessContrastShader );
+				extraPass.uniforms.brightness.value = -0.15;
+				extraPass.uniforms.contrast.value = -0.07;
+				
+			var composer = new EffectComposer( renderer );
+				composer.addPass( new RenderPass( scene, camera ) );
+				composer.addPass( extraPass );
+				composer.addPass( new UnrealBloomPass( new THREE.Vector2( innerWidth, innerHeight ), 0.5, 1, -2 ) );
+				composer.addPass( new OutputPass() );
+
+
+
+			// handle window resize events
+			
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+			
+			function onWindowResize( event )
+			{
+				camera.aspect = innerWidth / innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( innerWidth, innerHeight );
+				composer.setSize( innerWidth, innerHeight );
+			}			
+
+
+
+			// noise generator
+
+			var simplex = new SimplexNoise( );
+
+
+
+			// define threads
+			
+			const N = 400; // vertices in a thread
+			const T = 10;  // number of threads
+			const SPAN = 0.5;  // unbraided span
+
+			var material = new THREE.LineBasicMaterial( {
+					color: new THREE.Color(2,1.7,1.4),
+					blending: THREE.AdditiveBlending,
+			} );
+
+			var geometry = new THREE.BufferGeometry();
+				geometry.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array(3*N), 3 ) );
+
+			for( var i=0; i<T; i++ )
+				scene.add( new THREE.Line( geometry.clone(), material ) );
+
+
+
+			// animation loop
+			
+			function animate( t )
+			{
+				// process threads
+				for( var j=0; j<T; j++ )
+				{
+					var beta = (t/2000+j**0.25) % (2*Math.PI),
+						pos = scene.children[j].geometry.attributes.position;
+
+					// process vertices in a thread
+					for( var i=0; i<N; i++ )
+					{
+						var k = 0.01,
+							alpha = i/(N-1) * 2*Math.PI;
+						
+						var diff = beta-alpha;
+						if( diff < -Math.PI ) diff += 2*Math.PI;
+						if( diff > +Math.PI ) diff -= 2*Math.PI;
+						
+						if( Math.abs(diff) <= SPAN )
+							k += 0.5 + 0.5*Math.cos( Math.PI*diff/SPAN );
+							
+						var x = 3*Math.cos( alpha ),
+							y = 3*Math.sin( alpha );
+
+						k += 0.3*(1-k)*simplex.noise( x+t/8000, y+j/4)**2;
+						
+						var r = 5 + k*0.8*simplex.noise( x+Math.sin(t/7000)+j/4, y+Math.cos(t/5100)-j/6);
+						alpha += k*0.2*simplex.noise( x+Math.cos(t/6200)-j/3, y+Math.sin(t/7300)+j/5);
+						
+						pos.setXYZ( i, r*Math.cos(alpha), r*Math.sin(alpha), 3*(r-5) );
+						
+					} // for i
+					
+					pos.needsUpdate = true;
+					
+				} // for j
+
+				composer.render( scene, camera );				
+				
+			} // animate
+	
+			renderer.setAnimationLoop( animate );
+	
+		</script>
+	</body>
+</html>
+
+
