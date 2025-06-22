@@ -1,0 +1,221 @@
+﻿<!DOCTYPE html>
+
+<html>
+
+<head>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="stylesheet" href="../etudes.css">
+	<script type="importmap">
+		{
+			"imports": {
+				"three": "https://cdn.jsdelivr.net/npm/three@0.177.0/build/three.webgpu.min.js",
+				"three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.177.0/build/three.webgpu.min.js",
+				"three/tsl": "https://cdn.jsdelivr.net/npm/three@0.177.0/build/three.tsl.min.js",
+				"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.177.0/examples/jsm/",
+				"tsl-textures": "https://cdn.jsdelivr.net/npm/tsl-textures@2.1.1/dist/tsl-textures.min.js"
+			}
+		}
+	</script>
+</head>
+
+
+	
+<body>
+	<h1 class="white">Fantascope <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+	<div class="gray credits">Models: "<a href="skfb.ly/YnFH">Running Mei</a>" and "<a href="skfb.ly/X9FG">Totoro</a>" by cgart.com</div>
+
+
+	<script type="module">
+		import * as THREE from "three";
+		import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+		import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
+		import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+		import { SimplexNoise } from "three/addons/math/SimplexNoise.js";
+		import { Timer } from 'three/addons/misc/Timer.js';
+		import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+		import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
+		import { wood } from 'tsl-textures';
+
+
+
+		const N = 40; // number of figures
+		
+		
+		
+		// construct and setup the scene
+		
+		var renderer = new THREE.WebGPURenderer( {antialias: true} );
+			renderer.setSize( innerWidth, innerHeight );
+			renderer.setAnimationLoop( animationLoop );
+			renderer.outputColorSpace = THREE.SRGBColorSpace;
+			renderer.shadowMap.enabled = true;
+
+		document.body.appendChild( renderer.domElement );
+		document.body.style.margin = 0;
+		document.body.style.overflow = 'hidden';
+					
+		var simplex = new SimplexNoise( );
+		
+		var scene = new THREE.Scene();
+			scene.background = new THREE.Color( 'Black' );
+			scene.fog = new THREE.FogExp2( 'Black', 0.0013 );
+
+		var camera = new THREE.PerspectiveCamera( 30, innerWidth/innerHeight );
+			camera.position.set( 0, 55, 800 );
+			camera.lookAt( new THREE.Vector3(0,1,0) );
+
+		var light = new THREE.DirectionalLight( 'white', 10 );
+			light.position.set( 0, 0, 100 );
+			scene.add( light );
+		
+		var shadowLight = new THREE.SpotLight( 'white', 400000 );
+			shadowLight.penumbra = 1;
+			shadowLight.position.set( 0, 350, 0 );
+			shadowLight.castShadow = true;
+			scene.add( shadowLight );
+		
+		window.addEventListener( "resize", (event) => {
+			camera.aspect = innerWidth/innerHeight;
+			camera.updateProjectionMatrix( );
+			renderer.setSize( innerWidth, innerHeight );
+		});
+
+
+
+		// rotating platform
+		
+		var platform = new THREE.Group();
+			platform.rotation.y = 1.2;
+			platform.position.y = -50;
+			scene.add( platform );
+
+			
+
+		// slightly irregular wooden base
+
+		var shape = new THREE.Shape();
+		shape.moveTo( 338, 0 );
+		for ( var i=0; i<180; i++ )
+		{
+			var a = 2*Math.PI*i/180;
+			var r = 338+2*Math.sin(a*2);
+			shape.lineTo( r*Math.cos( a ), r*Math.sin( a ) );
+		}
+
+		var extrudeSettings = {
+			depth: 10,
+			bevelEnabled: true,
+			bevelSegments: 24,
+			steps: 1,
+			bevelSize: 10,
+			bevelThickness: 10,
+			curveSegments: 6
+		};
+
+		var geometry = toCreasedNormals( new THREE.ExtrudeGeometry( shape, extrudeSettings ).rotateX( Math.PI/2 ) );
+
+		var pos = geometry.getAttribute( 'position' );
+		for( var i=0; i<pos.count; i++ )
+		{
+			var x = pos.getX(i);
+			var z = pos.getZ(i);
+			if( x*x+z*z>200*200 )
+			{
+				pos.setY( i, pos.getY(i)+simplex.noise(x/100,z/100) );
+			}
+		}
+
+		var material = new THREE.MeshPhysicalNodeMaterial( {
+				colorNode: wood( {
+					color: new THREE.Color( 'sienna' ),
+					background: new THREE.Color( 'peru' ),
+					rings: 9,
+					angle: 0,
+					scale: -3,
+				} ),
+				metalness: 0.4,
+				roughness: 0.1,
+			} );
+
+		var base = new THREE.Mesh( geometry, material );
+			base.receiveShadow = true;
+			base.position.y = -10;
+			platform.add( base );
+
+			
+		
+		// load Totoro
+		
+		new GLTFLoader().load( 'fantascope/totoro.glb',
+			gltf => {
+			
+				var totoro = gltf.scene;
+				
+				totoro.scale.setScalar( 20 );
+				totoro.traverse( (child) => {
+					if( child.isMesh ) child.material.color = new THREE.Color(0);
+					child.castShadow = child.receiveShadow = true;
+				} );
+				totoro.castShadow = totoro.receiveShadow = true;
+				platform.add( totoro );
+			}
+			
+		);
+						
+			
+			
+		// load Mei and make N copies
+
+		new FBXLoader().load( 'reflection/Mei_Run.fbx',
+			fbx => {
+				fbx.scale.setScalar( 0.4 );
+				fbx.traverse( (child) => child.castShadow = true );
+				fbx.castShadow = true;
+				
+				for( var i=0; i<N; i++ )
+				{
+					var mei = SkeletonUtils.clone( fbx );
+						mei.position.setFromSphericalCoords( 270, Math.PI/2, i/N * 2*Math.PI );
+						mei.rotation.y = (i/N+1/4) * 2*Math.PI + 0.3*Math.sin(i/N*2*Math.PI);
+
+					var animator = new THREE.AnimationMixer( mei );
+						animator.clipAction( mei.animations[0] ).play();
+						animator.update( i/N * mei.animations[0].duration/4);
+						
+					platform.add( mei );
+				}
+			}
+		);
+						
+
+			
+		// animation loop
+		
+		var timer = new Timer();
+		
+		var dTime = 0;
+		
+		function animationLoop( time )
+		{
+			timer.update();
+			dTime += timer.getDelta();
+
+			if( dTime > 1/50 )
+			{
+				dTime -= 1/50;
+				
+				var speed = 2*Math.PI/N*(1.1*(0.5-0.5*Math.cos(time/5000))**1.2 )+0.005;
+
+				platform.rotation.y -= Math.min( speed, 2*Math.PI/N );
+
+				renderer.render( scene, camera );
+			}
+		} // animationLoop
+		
+	</script>
+	
+</body>
+
+</html>
+
+
