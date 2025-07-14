@@ -8,9 +8,7 @@
 	<script type="importmap">
 		{
 			"imports": {
-				"three": "https://cdn.jsdelivr.net/npm/three@0.178.0/build/three.webgpu.min.js",
-				"three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.178.0/build/three.webgpu.min.js",
-				"three/tsl": "https://cdn.jsdelivr.net/npm/three@0.178.0/build/three.tsl.min.js",
+				"three": "https://cdn.jsdelivr.net/npm/three@0.178.0/build/three.min.js",
 				"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.178.0/examples/jsm/"
 			}
 		}
@@ -31,7 +29,7 @@
 
 		// construct and setup the scene
 		
-		var renderer = new THREE.WebGPURenderer( {antialias: true} );
+		var renderer = new THREE.WebGLRenderer( {antialias: true} );
 			renderer.setSize( innerWidth, innerHeight );
 			renderer.setAnimationLoop( animationLoop );
 			renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -85,13 +83,13 @@
 					font: font,
 					size: 0.1,
 					depth: 0,
-					curveSegments: 12,
+					curveSegments: 8,
 					bevelEnabled: true,
 
 					bevelThickness: bt,
 					bevelSize: bs,
 					bevelOffset: bo,
-					bevelSegments: 3
+					bevelSegments: 1
 				};
 
 				var scale=0.004,
