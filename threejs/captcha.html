@@ -1,0 +1,196 @@
+﻿<!DOCTYPE html>
+
+<html>
+
+<head>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="stylesheet" href="../etudes.css">
+	<script type="importmap">
+		{
+			"imports": {
+				"three": "https://cdn.jsdelivr.net/npm/three@0.178.0/build/three.webgpu.min.js",
+				"three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.178.0/build/three.webgpu.min.js",
+				"three/tsl": "https://cdn.jsdelivr.net/npm/three@0.178.0/build/three.tsl.min.js",
+				"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.178.0/examples/jsm/"
+			}
+		}
+	</script>
+</head>
+
+
+	
+<body>
+	<h1>Captcha <a href="https://boytchev.github.io/etudes/">&larr;</a></h1>
+
+	<script type="module">
+		import * as THREE from "three";
+		import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+		import { SimplexNoise } from "three/addons/math/SimplexNoise.js";
+		import { font } from "./captcha/font.js";
+
+
+		// construct and setup the scene
+		
+		var renderer = new THREE.WebGPURenderer( {antialias: true} );
+			renderer.setSize( innerWidth, innerHeight );
+			renderer.setAnimationLoop( animationLoop );
+			renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+		document.body.appendChild( renderer.domElement );
+		document.body.style.margin = 0;
+		document.body.style.overflow = 'hidden';
+					
+		var scene = new THREE.Scene();
+			scene.background = new THREE.Color( 'antiquewhite' );
+			
+		var camera = new THREE.PerspectiveCamera( 30, innerWidth/innerHeight );
+			camera.position.set( 0, 0, 10 );
+
+		var light2 = new THREE.DirectionalLight( 'white', -500 );
+			light2.position.set( 100, 0, 0 );
+		
+		var light3 = new THREE.DirectionalLight( 'white', -500 );
+			light3.position.set( -100, 0, 0 );
+
+		window.addEventListener( "resize", (event) => {
+			camera.aspect = innerWidth/innerHeight;
+			camera.updateProjectionMatrix( );
+			renderer.setSize( innerWidth, innerHeight );
+		});
+
+
+
+		// random generator
+		
+		var simplex = new SimplexNoise( );
+		
+		function chaotic( time, offset=0, min=-1, max=1 ) {
+
+			return min + ( max-min )*( simplex.noise( time, offset )+1 )/2;
+
+		}
+
+
+		// a class defining a decorated text
+		
+		class Label extends THREE.Mesh {
+
+			constructor( text, y, bt, bs, bo ) {
+
+				var fontStyle = new THREE.MeshPhysicalMaterial( {
+					emissive: new THREE.Color( 'crimson' ),
+				} );
+
+				var fontParams = {
+					font: font,
+					size: 0.1,
+					depth: 0,
+					curveSegments: 12,
+					bevelEnabled: true,
+
+					bevelThickness: bt,
+					bevelSize: bs,
+					bevelOffset: bo,
+					bevelSegments: 3
+				};
+
+				var scale=0.004,
+					s = 10;
+				
+				var geometry = new TextGeometry( text, fontParams ).center();
+
+				var pos1 = []; // first morph
+				var pos2 = []; // second morph
+				
+				var pos = geometry.getAttribute( 'position' );
+				for ( var i=0; i<pos.count; i++ ) {
+
+					
+					var xx = pos.getX( i )
+							+chaotic( s*pos.getX( i ), 5+s*pos.getY( i ), -1*scale, 1*scale );
+
+					var yy = pos.getY( i )
+							+chaotic( y+s*pos.getY( i ), 2+s*pos.getX( i ), -12*scale, 12*scale );
+
+					pos1.push( xx, yy, pos.getZ(i) );
+
+					var xx = pos.getX( i )
+							+chaotic( s*pos.getY( i ), 4+s*pos.getX( i ), -12*scale, 12*scale );
+
+					var yy = pos.getY( i )
+							+chaotic( y+s*pos.getY( i ), 7+s*pos.getX( i ), -1*scale, 1*scale );
+							
+					pos2.push( xx, yy, pos.getZ(i) );
+				}
+
+				geometry.morphAttributes.position = [
+					new THREE.Float32BufferAttribute( pos1, 3 ),
+					new THREE.Float32BufferAttribute( pos2, 3 )
+				]
+
+
+				super( geometry, fontStyle );
+
+				this.scale.setScalar( 3 );
+				this.position.y = y;
+
+				this.morphTargetInfluences[ 0 ] = 0;
+				this.morphTargetInfluences[ 1 ] = 0;
+			} 
+
+		} // Label
+
+
+		// a few lines of decorated text
+		
+		var hamlet = new THREE.Group();
+		
+		hamlet.add( new Label( 'To be, or not to be: that is the question:', 1, 0.01, -0.001, 0 ) );
+		hamlet.add( new Label( 'Whether \'tis nobler in the mind to suffer', 0.5, 0.02, 0.003, 0.002 ) );
+		hamlet.add( new Label( 'The slings and arrows of outrageous fortune,', 0, 0.04, 0.005, 0.008 ) );
+		hamlet.add( new Label( 'Or to take arms against a sea of troubles,', -0.5, 0.001, 0.02, 0 ) );
+		hamlet.add( new Label( 'And by opposing end them? To die: to sleep;', -1, 0.01, -0.005, -0.01 ) );
+
+		hamlet.add( light2, light3 );
+		
+		scene.add( hamlet );
+		
+		
+		
+		function animationLoop( time )
+		{
+		/*
+			hamlet.rotation.set(
+				chaotic( time/15000, 0, -0.2, 0.2 ),
+				chaotic( time/11000, 1, -0.7, 0.7 ) + chaotic( time/8000, 4, -0.7, 0.7 ),
+				chaotic( time/15000, 2, -0.2, 0.2 )
+			);
+			
+			camera.lookAt(
+				chaotic( time/25000, -7, -2, 2 ),
+				chaotic( time/25000, 11, -0.2, 0.2 ),
+				0 );
+			
+			hamlet.scale.setScalar( chaotic( time/10000, 2, 0.75, 3 ) )
+			*/
+			hamlet.scale.setScalar( 1.1 )
+			
+			for( var obj of hamlet.children ) if( obj.isMesh )
+				{
+					time += 1000*obj.position.y/2;
+					var ss = THREE.MathUtils.clamp( chaotic(time/1000,4,-1,5), 0, 1.5 ) * (1-0.1**(time/50000));
+					var k = chaotic(time/1000,obj.position.y,0,1);
+
+					obj.morphTargetInfluences[ 0 ] = ss*(k**2);
+					obj.morphTargetInfluences[ 1 ] = ss*((1-k)**2);
+				}
+			renderer.render( scene, camera );
+		} // animationLoop
+		
+	</script>
+	
+</body>
+
+</html>
+
+
