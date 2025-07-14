@@ -8,7 +8,7 @@
 	<script type="importmap">
 		{
 			"imports": {
-				"three": "https://cdn.jsdelivr.net/npm/three@0.178.0/build/three.min.js",
+				"three": "https://cdn.jsdelivr.net/npm/three@0.178.0/build/three.module.min.js",
 				"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.178.0/examples/jsm/"
 			}
 		}
@@ -119,6 +119,7 @@
 							+chaotic( y+s*pos.getY( i ), 7+s*pos.getX( i ), -1*scale, 1*scale );
 							
 					pos2.push( xx, yy, pos.getZ(i) );
+					renderer.render( scene, camera );
 				}
 
 				geometry.morphAttributes.position = [
@@ -149,9 +150,9 @@
 		hamlet.add( new Label( 'Or to take arms against a sea of troubles,', -0.5, 0.001, 0.02, 0 ) );
 		hamlet.add( new Label( 'And by opposing end them? To die: to sleep;', -1, 0.01, -0.005, -0.01 ) );
 
+		scene.add( hamlet );
 		hamlet.add( light2, light3 );
 		
-		scene.add( hamlet );
 		
 		
 		

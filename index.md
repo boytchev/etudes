@@ -2,7 +2,7 @@ This is a repository for the source code of various 3D programlets.
 
 
 ### 44. [Captcha [Three.js]](threejs/captcha.html)
-<a href="threejs/captcha.html"><img src="snapshots/captcha.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> One of the most populat [captcha](https://en.wikipedia.org/wiki/CAPTCHA) designs in the past was to twist letters. This etude recreates this captcha design, but also adds a twist &ndash; the same font is decorated to look like 5 different fonts (the one at the top is closest to the original font).
+<a href="threejs/captcha.html"><img src="snapshots/captcha.jpg" width="150" style="border: solid 1px black; float:left; margin-right: 0.5em;"></a> One of the most populat [captcha](https://en.wikipedia.org/wiki/CAPTCHA) designs in the past was to twist letters. This etude recreates this captcha design, but also adds a twist &ndash; the same font is decorated to look like 5 different fonts.
 <div style="clear:both;"></div>
 
 
