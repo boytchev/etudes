@@ -176,7 +176,7 @@
 			for( var obj of hamlet.children ) if( obj.isMesh )
 				{
 					time += 1000*obj.position.y/2;
-					var ss = THREE.MathUtils.clamp( chaotic(time/1000,4,-1,5), 0, 1.5 ) * (1-0.1**(time/50000));
+					var ss = THREE.MathUtils.clamp( chaotic(time/1000,4,-1,5), 0, 1.2 ) * (1-0.1**(time/50000));
 					var k = chaotic(time/1000,obj.position.y,0,1);
 
 					obj.morphTargetInfluences[ 0 ] = ss*(k**2);
