@@ -159,7 +159,6 @@
 		
 		function animationLoop( time )
 		{
-		/*
 			hamlet.rotation.set(
 				chaotic( time/15000, 0, -0.2, 0.2 ),
 				chaotic( time/11000, 1, -0.7, 0.7 ) + chaotic( time/8000, 4, -0.7, 0.7 ),
@@ -172,8 +171,7 @@
 				0 );
 			
 			hamlet.scale.setScalar( chaotic( time/10000, 2, 0.75, 3 ) )
-			*/
-			hamlet.scale.setScalar( 1.1 )
+
 			
 			for( var obj of hamlet.children ) if( obj.isMesh )
 				{
