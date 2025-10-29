@@ -1,0 +1,156 @@
+﻿<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+		<link rel="stylesheet" href="../etudes.css">
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.min.js",
+					"three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.webgpu.min.js",
+					"three/tsl": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.tsl.min.js"
+				}
+			}
+		</script>
+		
+	</head>
+	
+	<body>
+		<script type="module">
+			import * as THREE from "three";
+			import * as TSL from "three/tsl";
+			
+			
+			// the traditional boilerplate
+			
+			var renderer = new THREE.WebGPURenderer( {antialias:true} );
+				renderer.setAnimationLoop( animate );
+				document.body.appendChild( renderer.domElement );
+				document.body.style.margin = 0;
+				document.body.style.overflow = 'hidden';
+
+			var camera = new THREE.PerspectiveCamera( 5, 1, 200, 400 );
+				camera.position.set( 0, 0, 300 );
+			
+			var light = new THREE.SpotLight('white',2e5);
+				light.position.set( 200, 0, 300 );
+				
+			var light2 = new THREE.SpotLight('tan',2e5);
+				light2.position.set( 300, 200, 300 );
+				
+			var light3 = new THREE.SpotLight('pink',2e5);
+				light3.position.set( -300, 200, 300 );
+				
+			var scene = new THREE.Scene();
+				scene.background = new THREE.Color( 'black' );
+				scene.add( light, light2, light3 );
+				
+			var raycaster = new THREE.Raycaster(),
+				pointer = new THREE.Vector2( Infinity, Infinity ),
+				youAreHere = new THREE.Vector3();
+
+
+
+			// capture some events, so the browser knows we are alive and functioning
+			
+			window.addEventListener( 'pointermove', onPointerMove, false );
+
+			var invisiblePlane = new THREE.Mesh(
+					new THREE.PlaneGeometry( 1000, 1000 ).translate(0,0,10)
+			);
+			
+			function onPointerMove( event )
+			{
+				pointer.x = 2*event.clientX/innerWidth - 1;
+				pointer.y = -2*event.clientY/innerHeight + 1;
+				
+				raycaster.setFromCamera( pointer, camera );
+
+				var intersects = raycaster.intersectObject( invisiblePlane );
+				if( intersects.length ) 
+				{
+					eye.lookAt( intersects[0].point );
+				}
+			}			
+
+			window.addEventListener( 'resize', onWindowResize, false );
+			onWindowResize();
+			
+			function onWindowResize( event )
+			{
+				camera.aspect = innerWidth / innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( innerWidth, innerHeight, true );
+			}			
+
+
+
+			// the ocular shader based on TSL
+			
+			var ocularShader = TSL.Fn( ( )=>{
+
+				var pos = TSL.positionLocal;
+				
+				var bloodVessels = TSL.vec3( 1,
+					TSL.vec2(TSL.add(
+						TSL.mx_noise_float( pos ),
+						TSL.mx_noise_float( pos.mul(2) ).mul( 0.5 ),
+						TSL.mx_noise_float( pos.mul(6) ).mul( 0.2 ),
+					).abs()
+						.pow(pos.z.add(3).reciprocal())) )
+						.mul(pos.z.smoothstep( 2.6, 2.5 ))
+						.mul(pos.y.add(pos.z).smoothstep(-2,2).add(0.1));
+
+
+				var irisBrown = TSL.vec3(0.6,0.1,0)
+						.mul(TSL.mx_worley_noise_float(TSL.equirectUV(pos.xzy.normalize()).mul(TSL.vec2(40*Math.PI,6*Math.PI))))
+						.mul(pos.z.smoothstep( 2.6, 2.9 ),2);
+				
+				var irisGreen = TSL.vec3(0.2,0.5,0)
+						.mul(TSL.mx_worley_noise_float(TSL.equirectUV(pos.xzy.normalize()).add(1).mul(TSL.vec2(40*Math.PI,6*Math.PI))))
+						.mul(pos.z.smoothstep( 2.7, 3 ),2);
+				
+				var k = TSL.mx_noise_float( TSL.time.div(3)).div(-2).clamp(-0.05,0.05).toVar();
+								
+				var pupil = pos.z.smoothstep( k.add(2.85), k.div(1.5).add(2.92) ).oneMinus();
+
+				return bloodVessels.add( irisBrown, irisGreen ).mul( pupil );
+
+			} ); // ocularShader
+
+
+
+
+			// anatomically incorrect eyes
+
+			var geometry = new THREE.SphereGeometry( 3, 60 ).rotateX( Math.PI/2 );
+			var material = new THREE.MeshPhysicalNodeMaterial({
+								colorNode: ocularShader(),
+								roughness: 0.1,
+								metalness: 0,
+							});
+							
+			var eye = new THREE.Mesh( geometry, material );
+				eye.position.set( 0, 0, 0 );
+				eye.scale.setScalar( 1.5 );
+
+			scene.add( eye );
+
+
+
+			// that's all folks
+			
+			function animate( t )
+			{		
+				renderer.renderAsync( scene, camera );
+			}
+			
+		</script>
+	</body>
+</html>
+
+
